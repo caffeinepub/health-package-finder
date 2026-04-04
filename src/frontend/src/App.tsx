@@ -10,21 +10,34 @@ import {
   BookOpen,
   ChevronRight,
   ClipboardList,
+  Database,
   ExternalLink,
+  FileCheck,
   FileText,
+  FolderOpen,
   Globe,
   Home,
   Info,
   Loader2,
   Package,
+  Receipt,
   RefreshCw,
   Search,
+  Users,
+  Wallet,
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ClaimsModule } from "./components/ClaimsModule";
+import { ClinicalDocsModule } from "./components/ClinicalDocsModule";
 import { GenerateNotesModal } from "./components/GenerateNotesModal";
 import type { HealthPackage } from "./components/GenerateNotesModal";
+import { LocalDataSourceModule } from "./components/LocalDataSourceModule";
+import { MastersModule } from "./components/MastersModule";
+import { PaymentModule } from "./components/PaymentModule";
+import { PreAuthModule } from "./components/PreAuthModule";
+import { RCMModule } from "./components/RCMModule";
 
 export type { HealthPackage };
 
@@ -661,9 +674,28 @@ function MainApp() {
   const [searchQuery, setSearchQuery] = useState("");
   const [specialityFilter, setSpecialityFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [activePage, setActivePage] = useState<"home" | "find" | "about">(
-    "home",
-  );
+  const [activePage, setActivePage] = useState<
+    | "home"
+    | "find"
+    | "about"
+    | "rcm"
+    | "preauth"
+    | "clinicaldocs"
+    | "claims"
+    | "payment"
+    | "masters"
+    | "datasource"
+  >("home");
+  const [prefill, setPrefill] = useState<Record<string, unknown>>({});
+
+  function handleNavigate(page: string, data?: Record<string, unknown>) {
+    setActivePage(page as Parameters<typeof setActivePage>[0]);
+    if (data) setPrefill(data);
+  }
+
+  function handlePrefillConsumed() {
+    setPrefill({});
+  }
 
   useEffect(() => {
     fetch("/assets/packages.json")
@@ -772,6 +804,118 @@ function MainApp() {
               <span className="flex items-center gap-1">
                 <Info className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">About</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              data-ocid="nav.rcm.link"
+              onClick={() => setActivePage("rcm")}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                activePage === "rcm"
+                  ? "bg-white/20 text-white"
+                  : "text-white/70 hover:text-white hover:bg-white/10",
+              )}
+            >
+              <span className="flex items-center gap-1">
+                <Users className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">RCM</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              data-ocid="nav.preauth.link"
+              onClick={() => setActivePage("preauth")}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                activePage === "preauth"
+                  ? "bg-white/20 text-white"
+                  : "text-white/70 hover:text-white hover:bg-white/10",
+              )}
+            >
+              <span className="flex items-center gap-1">
+                <FileCheck className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Pre-Auth</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              data-ocid="nav.clinicaldocs.link"
+              onClick={() => setActivePage("clinicaldocs")}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                activePage === "clinicaldocs"
+                  ? "bg-white/20 text-white"
+                  : "text-white/70 hover:text-white hover:bg-white/10",
+              )}
+            >
+              <span className="flex items-center gap-1">
+                <FileText className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Clinical Docs</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              data-ocid="nav.claims.link"
+              onClick={() => setActivePage("claims")}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                activePage === "claims"
+                  ? "bg-white/20 text-white"
+                  : "text-white/70 hover:text-white hover:bg-white/10",
+              )}
+            >
+              <span className="flex items-center gap-1">
+                <Receipt className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Claims</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              data-ocid="nav.payment.link"
+              onClick={() => setActivePage("payment")}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                activePage === "payment"
+                  ? "bg-white/20 text-white"
+                  : "text-white/70 hover:text-white hover:bg-white/10",
+              )}
+            >
+              <span className="flex items-center gap-1">
+                <Wallet className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Payment</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              data-ocid="nav.masters.link"
+              onClick={() => setActivePage("masters")}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                activePage === "masters"
+                  ? "bg-white/20 text-white"
+                  : "text-white/70 hover:text-white hover:bg-white/10",
+              )}
+            >
+              <span className="flex items-center gap-1">
+                <Database className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Masters</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              data-ocid="nav.datasource.link"
+              onClick={() => setActivePage("datasource")}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                activePage === "datasource"
+                  ? "bg-white/20 text-white"
+                  : "text-white/70 hover:text-white hover:bg-white/10",
+              )}
+            >
+              <span className="flex items-center gap-1">
+                <FolderOpen className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Data</span>
               </span>
             </button>
           </nav>
@@ -898,7 +1042,7 @@ function MainApp() {
                 <h2 className="text-2xl font-bold text-hp-body text-center mb-8">
                   How It Works
                 </h2>
-                <div className="grid sm:grid-cols-3 gap-6">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[
                     {
                       icon: Search,
@@ -914,6 +1058,11 @@ function MainApp() {
                       icon: ClipboardList,
                       title: "Generate Clinical Notes",
                       desc: "Instantly generate OT notes, Anesthesia records, and Discharge Summaries as editable Word documents.",
+                    },
+                    {
+                      icon: Receipt,
+                      title: "Claims Management",
+                      desc: "Submit, track, and manage insurance claims end-to-end with real-time status updates and settlement tracking.",
                     },
                   ].map((item) => (
                     <motion.div
@@ -1108,6 +1257,7 @@ function MainApp() {
                     "Wikipedia-powered medical descriptions \u2014 no API key required",
                     "Pre-auth and claim document checklists",
                     "Generate OT Notes, Anesthesia Records & Discharge Summaries as editable Word files",
+                    "End-to-end claims submission and settlement tracking (Module 4)",
                   ].map((f) => (
                     <li
                       key={f}
@@ -1145,6 +1295,40 @@ function MainApp() {
               </motion.div>
             </div>
           </motion.main>
+        )}
+        {activePage === "rcm" && (
+          <RCMModule key="rcm" onNavigate={handleNavigate} />
+        )}
+        {activePage === "preauth" && (
+          <PreAuthModule
+            key="preauth"
+            onNavigate={handleNavigate}
+            prefill={prefill}
+            onPrefillConsumed={handlePrefillConsumed}
+          />
+        )}
+        {activePage === "clinicaldocs" && (
+          <ClinicalDocsModule key="clinicaldocs" onNavigate={handleNavigate} />
+        )}
+        {activePage === "claims" && (
+          <ClaimsModule
+            key="claims"
+            onNavigate={handleNavigate}
+            prefill={prefill}
+            onPrefillConsumed={handlePrefillConsumed}
+          />
+        )}
+        {activePage === "payment" && (
+          <PaymentModule
+            key="payment"
+            onNavigate={handleNavigate}
+            prefill={prefill}
+            onPrefillConsumed={handlePrefillConsumed}
+          />
+        )}
+        {activePage === "masters" && <MastersModule key="masters" />}
+        {activePage === "datasource" && (
+          <LocalDataSourceModule key="datasource" />
         )}
       </AnimatePresence>
 

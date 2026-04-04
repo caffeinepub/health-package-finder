@@ -8,64 +8,634 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
-export const http_header = IDL.Record({
-  'value' : IDL.Text,
+export const _CaffeineStorageCreateCertificateResult = IDL.Record({
+  'method' : IDL.Text,
+  'blob_hash' : IDL.Text,
+});
+export const _CaffeineStorageRefillInformation = IDL.Record({
+  'proposed_top_up_amount' : IDL.Opt(IDL.Nat),
+});
+export const _CaffeineStorageRefillResult = IDL.Record({
+  'success' : IDL.Opt(IDL.Bool),
+  'topped_up_amount' : IDL.Opt(IDL.Nat),
+});
+export const UserRole = IDL.Variant({
+  'admin' : IDL.Null,
+  'user' : IDL.Null,
+  'guest' : IDL.Null,
+});
+
+// Patient types
+export const DocumentRef = IDL.Record({
+  'documentId' : IDL.Text,
+  'docType' : IDL.Text,
+});
+export const Patient = IDL.Record({
+  'id' : IDL.Text,
+  'abhaId' : IDL.Text,
   'name' : IDL.Text,
+  'dob' : IDL.Text,
+  'gender' : IDL.Text,
+  'phone' : IDL.Text,
+  'address' : IDL.Text,
+  'payerType' : IDL.Text,
+  'payerName' : IDL.Text,
+  'policyNumber' : IDL.Text,
+  'policyStart' : IDL.Text,
+  'policyEnd' : IDL.Text,
+  'eligibilityStatus' : IDL.Text,
+  'eligibilityCheckedAt' : IDL.Int,
+  'documents' : IDL.Vec(DocumentRef),
+  'createdAt' : IDL.Int,
+  'createdBy' : IDL.Text,
 });
-export const http_request_result = IDL.Record({
-  'status' : IDL.Nat,
-  'body' : IDL.Vec(IDL.Nat8),
-  'headers' : IDL.Vec(http_header),
+export const RegisterRequest = IDL.Record({
+  'abhaId' : IDL.Text,
+  'name' : IDL.Text,
+  'dob' : IDL.Text,
+  'gender' : IDL.Text,
+  'phone' : IDL.Text,
+  'address' : IDL.Text,
+  'payerType' : IDL.Text,
+  'payerName' : IDL.Text,
+  'policyNumber' : IDL.Text,
+  'policyStart' : IDL.Text,
+  'policyEnd' : IDL.Text,
 });
-export const TransformationInput = IDL.Record({
-  'context' : IDL.Vec(IDL.Nat8),
-  'response' : http_request_result,
+export const RegisterResult = IDL.Variant({
+  'ok' : IDL.Text,
+  'err' : IDL.Text,
 });
-export const TransformationOutput = IDL.Record({
-  'status' : IDL.Nat,
-  'body' : IDL.Vec(IDL.Nat8),
-  'headers' : IDL.Vec(http_header),
+
+// Pre-Auth types
+export const QueryMessage = IDL.Record({
+  'message' : IDL.Text,
+  'fromTPA' : IDL.Bool,
+  'timestamp' : IDL.Int,
+});
+export const DocChecklistItem = IDL.Record({
+  'docName' : IDL.Text,
+  'required' : IDL.Bool,
+  'submitted' : IDL.Bool,
+});
+export const PreAuthRecord = IDL.Record({
+  'id' : IDL.Text,
+  'patientId' : IDL.Text,
+  'patientName' : IDL.Text,
+  'packageCode' : IDL.Text,
+  'packageName' : IDL.Text,
+  'diagnosisName' : IDL.Text,
+  'schemeType' : IDL.Text,
+  'payerName' : IDL.Text,
+  'requestedAmount' : IDL.Text,
+  'status' : IDL.Text,
+  'submittedAt' : IDL.Int,
+  'updatedAt' : IDL.Int,
+  'expectedTATHours' : IDL.Nat,
+  'remarks' : IDL.Text,
+  'queries' : IDL.Vec(QueryMessage),
+  'documentChecklist' : IDL.Vec(DocChecklistItem),
+});
+export const PreAuthRequest = IDL.Record({
+  'patientId' : IDL.Text,
+  'patientName' : IDL.Text,
+  'packageCode' : IDL.Text,
+  'packageName' : IDL.Text,
+  'diagnosisName' : IDL.Text,
+  'schemeType' : IDL.Text,
+  'payerName' : IDL.Text,
+  'requestedAmount' : IDL.Text,
+  'expectedTATHours' : IDL.Nat,
+  'documentChecklist' : IDL.Vec(DocChecklistItem),
+});
+export const PreAuthResult = IDL.Variant({
+  'ok' : IDL.Text,
+  'err' : IDL.Text,
+});
+
+// Clinical Documentation types
+export const ClinicalDocChecklistItem = IDL.Record({
+  'docName' : IDL.Text,
+  'packageCode' : IDL.Text,
+  'required' : IDL.Bool,
+  'submitted' : IDL.Bool,
+  'docType' : IDL.Text,
+});
+export const ClinicalDocRecord = IDL.Record({
+  'id' : IDL.Text,
+  'patientId' : IDL.Text,
+  'patientName' : IDL.Text,
+  'packageCodes' : IDL.Vec(IDL.Text),
+  'packageNames' : IDL.Vec(IDL.Text),
+  'doctorNotes' : IDL.Text,
+  'dischargeSummary' : IDL.Text,
+  'documentChecklist' : IDL.Vec(ClinicalDocChecklistItem),
+  'status' : IDL.Text,
+  'createdAt' : IDL.Int,
+  'updatedAt' : IDL.Int,
+});
+export const ClinicalDocRequest = IDL.Record({
+  'patientId' : IDL.Text,
+  'patientName' : IDL.Text,
+  'packageCodes' : IDL.Vec(IDL.Text),
+  'packageNames' : IDL.Vec(IDL.Text),
+  'doctorNotes' : IDL.Text,
+  'dischargeSummary' : IDL.Text,
+  'documentChecklist' : IDL.Vec(ClinicalDocChecklistItem),
+});
+export const ClinicalDocResult = IDL.Variant({
+  'ok' : IDL.Text,
+  'err' : IDL.Text,
+});
+
+// Claims types
+export const ClaimRecord = IDL.Record({
+  'id' : IDL.Text,
+  'patientId' : IDL.Text,
+  'patientName' : IDL.Text,
+  'preAuthId' : IDL.Text,
+  'packageCode' : IDL.Text,
+  'packageName' : IDL.Text,
+  'diagnosisName' : IDL.Text,
+  'schemeType' : IDL.Text,
+  'payerName' : IDL.Text,
+  'admissionDate' : IDL.Text,
+  'dischargeDate' : IDL.Text,
+  'billedAmount' : IDL.Text,
+  'approvedAmount' : IDL.Text,
+  'icdCode' : IDL.Text,
+  'procedureDetails' : IDL.Text,
+  'claimType' : IDL.Text,
+  'status' : IDL.Text,
+  'rejectionRemarks' : IDL.Text,
+  'settlementDate' : IDL.Text,
+  'documentChecklist' : IDL.Vec(DocChecklistItem),
+  'createdAt' : IDL.Int,
+  'updatedAt' : IDL.Int,
+});
+export const ClaimRequest = IDL.Record({
+  'patientId' : IDL.Text,
+  'patientName' : IDL.Text,
+  'preAuthId' : IDL.Text,
+  'packageCode' : IDL.Text,
+  'packageName' : IDL.Text,
+  'diagnosisName' : IDL.Text,
+  'schemeType' : IDL.Text,
+  'payerName' : IDL.Text,
+  'admissionDate' : IDL.Text,
+  'dischargeDate' : IDL.Text,
+  'billedAmount' : IDL.Text,
+  'approvedAmount' : IDL.Text,
+  'icdCode' : IDL.Text,
+  'procedureDetails' : IDL.Text,
+  'claimType' : IDL.Text,
+  'documentChecklist' : IDL.Vec(DocChecklistItem),
+});
+export const ClaimResult = IDL.Variant({
+  'ok' : IDL.Text,
+  'err' : IDL.Text,
+});
+
+// Payment types
+export const PaymentRecord = IDL.Record({
+  'id' : IDL.Text,
+  'claimId' : IDL.Text,
+  'patientId' : IDL.Text,
+  'patientName' : IDL.Text,
+  'payerName' : IDL.Text,
+  'billedAmount' : IDL.Text,
+  'approvedAmount' : IDL.Text,
+  'paidAmount' : IDL.Text,
+  'paymentMode' : IDL.Text,
+  'transactionRef' : IDL.Text,
+  'paymentDate' : IDL.Text,
+  'settlementStatus' : IDL.Text,
+  'discrepancyRemarks' : IDL.Text,
+  'reconciledAt' : IDL.Int,
+  'createdAt' : IDL.Int,
+  'updatedAt' : IDL.Int,
+});
+export const PaymentRequest = IDL.Record({
+  'claimId' : IDL.Text,
+  'patientId' : IDL.Text,
+  'patientName' : IDL.Text,
+  'payerName' : IDL.Text,
+  'billedAmount' : IDL.Text,
+  'approvedAmount' : IDL.Text,
+  'paidAmount' : IDL.Text,
+  'paymentMode' : IDL.Text,
+  'transactionRef' : IDL.Text,
+  'paymentDate' : IDL.Text,
+  'discrepancyRemarks' : IDL.Text,
+});
+export const PaymentResult = IDL.Variant({
+  'ok' : IDL.Text,
+  'err' : IDL.Text,
+});
+
+// Masters types
+export const MasterResult = IDL.Variant({
+  'ok' : IDL.Text,
+  'err' : IDL.Text,
+});
+export const HospitalMaster = IDL.Record({
+  'id' : IDL.Text,
+  'name' : IDL.Text,
+  'code' : IDL.Text,
+  'address' : IDL.Text,
+  'nabhNumber' : IDL.Text,
+  'rohiniId' : IDL.Text,
+  'contactPerson' : IDL.Text,
+  'phone' : IDL.Text,
+  'email' : IDL.Text,
+  'isActive' : IDL.Bool,
+  'createdAt' : IDL.Int,
+  'updatedAt' : IDL.Int,
+});
+export const HospitalMasterRequest = IDL.Record({
+  'name' : IDL.Text,
+  'code' : IDL.Text,
+  'address' : IDL.Text,
+  'nabhNumber' : IDL.Text,
+  'rohiniId' : IDL.Text,
+  'contactPerson' : IDL.Text,
+  'phone' : IDL.Text,
+  'email' : IDL.Text,
+  'isActive' : IDL.Bool,
+});
+export const DoctorMaster = IDL.Record({
+  'id' : IDL.Text,
+  'name' : IDL.Text,
+  'registrationNumber' : IDL.Text,
+  'specialisation' : IDL.Text,
+  'department' : IDL.Text,
+  'phone' : IDL.Text,
+  'email' : IDL.Text,
+  'isActive' : IDL.Bool,
+  'createdAt' : IDL.Int,
+  'updatedAt' : IDL.Int,
+});
+export const DoctorMasterRequest = IDL.Record({
+  'name' : IDL.Text,
+  'registrationNumber' : IDL.Text,
+  'specialisation' : IDL.Text,
+  'department' : IDL.Text,
+  'phone' : IDL.Text,
+  'email' : IDL.Text,
+  'isActive' : IDL.Bool,
+});
+export const TpaMaster = IDL.Record({
+  'id' : IDL.Text,
+  'name' : IDL.Text,
+  'code' : IDL.Text,
+  'tpaType' : IDL.Text,
+  'contactPerson' : IDL.Text,
+  'phone' : IDL.Text,
+  'email' : IDL.Text,
+  'isActive' : IDL.Bool,
+  'createdAt' : IDL.Int,
+  'updatedAt' : IDL.Int,
+});
+export const TpaMasterRequest = IDL.Record({
+  'name' : IDL.Text,
+  'code' : IDL.Text,
+  'tpaType' : IDL.Text,
+  'contactPerson' : IDL.Text,
+  'phone' : IDL.Text,
+  'email' : IDL.Text,
+  'isActive' : IDL.Bool,
+});
+export const IcdMaster = IDL.Record({
+  'id' : IDL.Text,
+  'code' : IDL.Text,
+  'description' : IDL.Text,
+  'category' : IDL.Text,
+  'isActive' : IDL.Bool,
+  'createdAt' : IDL.Int,
+  'updatedAt' : IDL.Int,
+});
+export const IcdMasterRequest = IDL.Record({
+  'code' : IDL.Text,
+  'description' : IDL.Text,
+  'category' : IDL.Text,
+  'isActive' : IDL.Bool,
+});
+export const WardMaster = IDL.Record({
+  'id' : IDL.Text,
+  'name' : IDL.Text,
+  'wardType' : IDL.Text,
+  'ratePerDay' : IDL.Text,
+  'totalBeds' : IDL.Nat,
+  'isActive' : IDL.Bool,
+  'createdAt' : IDL.Int,
+  'updatedAt' : IDL.Int,
+});
+export const WardMasterRequest = IDL.Record({
+  'name' : IDL.Text,
+  'wardType' : IDL.Text,
+  'ratePerDay' : IDL.Text,
+  'totalBeds' : IDL.Nat,
+  'isActive' : IDL.Bool,
 });
 
 export const idlService = IDL.Service({
-  'getApiKeySet' : IDL.Func([], [IDL.Bool], ['query']),
-  'getPackageInfo' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Text], []),
-  'setApiKey' : IDL.Func([IDL.Text], [], []),
-  'transformOpenAiJsonResponse' : IDL.Func(
-      [TransformationInput],
-      [TransformationOutput],
-      ['query'],
-    ),
+  '_caffeineStorageBlobIsLive' : IDL.Func([IDL.Vec(IDL.Nat8)],[IDL.Bool],['query']),
+  '_caffeineStorageBlobsToDelete' : IDL.Func([],[IDL.Vec(IDL.Vec(IDL.Nat8))],['query']),
+  '_caffeineStorageConfirmBlobDeletion' : IDL.Func([IDL.Vec(IDL.Vec(IDL.Nat8))],[],[]),
+  '_caffeineStorageCreateCertificate' : IDL.Func([IDL.Text],[_CaffeineStorageCreateCertificateResult],[]),
+  '_caffeineStorageRefillCashier' : IDL.Func([IDL.Opt(_CaffeineStorageRefillInformation)],[_CaffeineStorageRefillResult],[]),
+  '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([],[],[]),
+  '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text],[],[]),
+  'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole],[],[]),
+  'getCallerUserRole' : IDL.Func([],[UserRole],['query']),
+  'isCallerAdmin' : IDL.Func([],[IDL.Bool],['query']),
+  // Patient
+  'registerPatient' : IDL.Func([RegisterRequest],[RegisterResult],[]),
+  'getPatients' : IDL.Func([],[IDL.Vec(Patient)],['query']),
+  'getPatientById' : IDL.Func([IDL.Text],[IDL.Opt(Patient)],['query']),
+  'getPatientByAbhaId' : IDL.Func([IDL.Text],[IDL.Opt(Patient)],['query']),
+  'searchPatients' : IDL.Func([IDL.Text],[IDL.Vec(Patient)],['query']),
+  'updateEligibility' : IDL.Func([IDL.Text, IDL.Text],[IDL.Bool],[]),
+  'addDocument' : IDL.Func([IDL.Text, IDL.Text, IDL.Text],[IDL.Bool],[]),
+  'getPatientsByStatus' : IDL.Func([IDL.Text],[IDL.Vec(Patient)],['query']),
+  // Pre-Auth
+  'createPreAuth' : IDL.Func([PreAuthRequest],[PreAuthResult],[]),
+  'getPreAuths' : IDL.Func([],[IDL.Vec(PreAuthRecord)],['query']),
+  'getPreAuthById' : IDL.Func([IDL.Text],[IDL.Opt(PreAuthRecord)],['query']),
+  'getPreAuthsByPatient' : IDL.Func([IDL.Text],[IDL.Vec(PreAuthRecord)],['query']),
+  'updatePreAuthStatus' : IDL.Func([IDL.Text, IDL.Text, IDL.Text],[IDL.Bool],[]),
+  'addQueryResponse' : IDL.Func([IDL.Text, IDL.Text, IDL.Bool],[IDL.Bool],[]),
+  'getPreAuthsByStatus' : IDL.Func([IDL.Text],[IDL.Vec(PreAuthRecord)],['query']),
+  // Clinical Docs
+  'createClinicalDoc' : IDL.Func([ClinicalDocRequest],[ClinicalDocResult],[]),
+  'getClinicalDocs' : IDL.Func([],[IDL.Vec(ClinicalDocRecord)],['query']),
+  'getClinicalDocById' : IDL.Func([IDL.Text],[IDL.Opt(ClinicalDocRecord)],['query']),
+  'getClinicalDocsByPatient' : IDL.Func([IDL.Text],[IDL.Vec(ClinicalDocRecord)],['query']),
+  'updateClinicalDoc' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Vec(ClinicalDocChecklistItem), IDL.Text],[IDL.Bool],[]),
+  'getClinicalDocsByStatus' : IDL.Func([IDL.Text],[IDL.Vec(ClinicalDocRecord)],['query']),
+  // Claims
+  'createClaim' : IDL.Func([ClaimRequest],[ClaimResult],[]),
+  'getClaims' : IDL.Func([],[IDL.Vec(ClaimRecord)],['query']),
+  'getClaimById' : IDL.Func([IDL.Text],[IDL.Opt(ClaimRecord)],['query']),
+  'getClaimsByPatient' : IDL.Func([IDL.Text],[IDL.Vec(ClaimRecord)],['query']),
+  'getClaimsByPreAuth' : IDL.Func([IDL.Text],[IDL.Vec(ClaimRecord)],['query']),
+  'updateClaimStatus' : IDL.Func([IDL.Text, IDL.Text, IDL.Text],[IDL.Bool],[]),
+  'getClaimsByStatus' : IDL.Func([IDL.Text],[IDL.Vec(ClaimRecord)],['query']),
+  // Payments
+  'createPayment' : IDL.Func([PaymentRequest],[PaymentResult],[]),
+  'getPayments' : IDL.Func([],[IDL.Vec(PaymentRecord)],['query']),
+  'getPaymentById' : IDL.Func([IDL.Text],[IDL.Opt(PaymentRecord)],['query']),
+  'getPaymentsByPatient' : IDL.Func([IDL.Text],[IDL.Vec(PaymentRecord)],['query']),
+  'getPaymentsByClaimId' : IDL.Func([IDL.Text],[IDL.Vec(PaymentRecord)],['query']),
+  'getPaymentsByStatus' : IDL.Func([IDL.Text],[IDL.Vec(PaymentRecord)],['query']),
+  'updatePaymentStatus' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],[IDL.Bool],[]),
+  // Masters - Hospital
+  'createHospital' : IDL.Func([HospitalMasterRequest],[MasterResult],[]),
+  'getHospitals' : IDL.Func([],[IDL.Vec(HospitalMaster)],['query']),
+  'updateHospital' : IDL.Func([IDL.Text, HospitalMasterRequest],[IDL.Bool],[]),
+  'deleteHospital' : IDL.Func([IDL.Text],[IDL.Bool],[]),
+  // Masters - Doctor
+  'createDoctor' : IDL.Func([DoctorMasterRequest],[MasterResult],[]),
+  'getDoctors' : IDL.Func([],[IDL.Vec(DoctorMaster)],['query']),
+  'updateDoctor' : IDL.Func([IDL.Text, DoctorMasterRequest],[IDL.Bool],[]),
+  'deleteDoctor' : IDL.Func([IDL.Text],[IDL.Bool],[]),
+  // Masters - TPA
+  'createTpa' : IDL.Func([TpaMasterRequest],[MasterResult],[]),
+  'getTpas' : IDL.Func([],[IDL.Vec(TpaMaster)],['query']),
+  'updateTpa' : IDL.Func([IDL.Text, TpaMasterRequest],[IDL.Bool],[]),
+  'deleteTpa' : IDL.Func([IDL.Text],[IDL.Bool],[]),
+  // Masters - ICD
+  'createIcd' : IDL.Func([IcdMasterRequest],[MasterResult],[]),
+  'getIcds' : IDL.Func([],[IDL.Vec(IcdMaster)],['query']),
+  'updateIcd' : IDL.Func([IDL.Text, IcdMasterRequest],[IDL.Bool],[]),
+  'deleteIcd' : IDL.Func([IDL.Text],[IDL.Bool],[]),
+  // Masters - Ward
+  'createWard' : IDL.Func([WardMasterRequest],[MasterResult],[]),
+  'getWards' : IDL.Func([],[IDL.Vec(WardMaster)],['query']),
+  'updateWard' : IDL.Func([IDL.Text, WardMasterRequest],[IDL.Bool],[]),
+  'deleteWard' : IDL.Func([IDL.Text],[IDL.Bool],[]),
 });
 
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
-  const http_header = IDL.Record({ 'value' : IDL.Text, 'name' : IDL.Text });
-  const http_request_result = IDL.Record({
-    'status' : IDL.Nat,
-    'body' : IDL.Vec(IDL.Nat8),
-    'headers' : IDL.Vec(http_header),
+  const _CaffeineStorageCreateCertificateResult = IDL.Record({
+    'method' : IDL.Text,
+    'blob_hash' : IDL.Text,
   });
-  const TransformationInput = IDL.Record({
-    'context' : IDL.Vec(IDL.Nat8),
-    'response' : http_request_result,
+  const _CaffeineStorageRefillInformation = IDL.Record({
+    'proposed_top_up_amount' : IDL.Opt(IDL.Nat),
   });
-  const TransformationOutput = IDL.Record({
-    'status' : IDL.Nat,
-    'body' : IDL.Vec(IDL.Nat8),
-    'headers' : IDL.Vec(http_header),
+  const _CaffeineStorageRefillResult = IDL.Record({
+    'success' : IDL.Opt(IDL.Bool),
+    'topped_up_amount' : IDL.Opt(IDL.Nat),
   });
-  
+  const UserRole = IDL.Variant({
+    'admin' : IDL.Null,
+    'user' : IDL.Null,
+    'guest' : IDL.Null,
+  });
+  const DocumentRef = IDL.Record({ 'documentId': IDL.Text, 'docType': IDL.Text });
+  const Patient = IDL.Record({
+    'id': IDL.Text, 'abhaId': IDL.Text, 'name': IDL.Text, 'dob': IDL.Text,
+    'gender': IDL.Text, 'phone': IDL.Text, 'address': IDL.Text,
+    'payerType': IDL.Text, 'payerName': IDL.Text, 'policyNumber': IDL.Text,
+    'policyStart': IDL.Text, 'policyEnd': IDL.Text,
+    'eligibilityStatus': IDL.Text, 'eligibilityCheckedAt': IDL.Int,
+    'documents': IDL.Vec(DocumentRef), 'createdAt': IDL.Int, 'createdBy': IDL.Text,
+  });
+  const RegisterRequest = IDL.Record({
+    'abhaId': IDL.Text, 'name': IDL.Text, 'dob': IDL.Text, 'gender': IDL.Text,
+    'phone': IDL.Text, 'address': IDL.Text, 'payerType': IDL.Text,
+    'payerName': IDL.Text, 'policyNumber': IDL.Text,
+    'policyStart': IDL.Text, 'policyEnd': IDL.Text,
+  });
+  const RegisterResult = IDL.Variant({ 'ok': IDL.Text, 'err': IDL.Text });
+  const QueryMessage = IDL.Record({ 'message': IDL.Text, 'fromTPA': IDL.Bool, 'timestamp': IDL.Int });
+  const DocChecklistItem = IDL.Record({ 'docName': IDL.Text, 'required': IDL.Bool, 'submitted': IDL.Bool });
+  const PreAuthRecord = IDL.Record({
+    'id': IDL.Text, 'patientId': IDL.Text, 'patientName': IDL.Text,
+    'packageCode': IDL.Text, 'packageName': IDL.Text, 'diagnosisName': IDL.Text,
+    'schemeType': IDL.Text, 'payerName': IDL.Text, 'requestedAmount': IDL.Text,
+    'status': IDL.Text, 'submittedAt': IDL.Int, 'updatedAt': IDL.Int,
+    'expectedTATHours': IDL.Nat, 'remarks': IDL.Text,
+    'queries': IDL.Vec(QueryMessage), 'documentChecklist': IDL.Vec(DocChecklistItem),
+  });
+  const PreAuthRequest = IDL.Record({
+    'patientId': IDL.Text, 'patientName': IDL.Text, 'packageCode': IDL.Text,
+    'packageName': IDL.Text, 'diagnosisName': IDL.Text, 'schemeType': IDL.Text,
+    'payerName': IDL.Text, 'requestedAmount': IDL.Text,
+    'expectedTATHours': IDL.Nat, 'documentChecklist': IDL.Vec(DocChecklistItem),
+  });
+  const PreAuthResult = IDL.Variant({ 'ok': IDL.Text, 'err': IDL.Text });
+  const ClinicalDocChecklistItem = IDL.Record({
+    'docName': IDL.Text, 'packageCode': IDL.Text, 'required': IDL.Bool,
+    'submitted': IDL.Bool, 'docType': IDL.Text,
+  });
+  const ClinicalDocRecord = IDL.Record({
+    'id': IDL.Text, 'patientId': IDL.Text, 'patientName': IDL.Text,
+    'packageCodes': IDL.Vec(IDL.Text), 'packageNames': IDL.Vec(IDL.Text),
+    'doctorNotes': IDL.Text, 'dischargeSummary': IDL.Text,
+    'documentChecklist': IDL.Vec(ClinicalDocChecklistItem),
+    'status': IDL.Text, 'createdAt': IDL.Int, 'updatedAt': IDL.Int,
+  });
+  const ClinicalDocRequest = IDL.Record({
+    'patientId': IDL.Text, 'patientName': IDL.Text,
+    'packageCodes': IDL.Vec(IDL.Text), 'packageNames': IDL.Vec(IDL.Text),
+    'doctorNotes': IDL.Text, 'dischargeSummary': IDL.Text,
+    'documentChecklist': IDL.Vec(ClinicalDocChecklistItem),
+  });
+  const ClinicalDocResult = IDL.Variant({ 'ok': IDL.Text, 'err': IDL.Text });
+  const ClaimRecord = IDL.Record({
+    'id': IDL.Text, 'patientId': IDL.Text, 'patientName': IDL.Text,
+    'preAuthId': IDL.Text, 'packageCode': IDL.Text, 'packageName': IDL.Text,
+    'diagnosisName': IDL.Text, 'schemeType': IDL.Text, 'payerName': IDL.Text,
+    'admissionDate': IDL.Text, 'dischargeDate': IDL.Text,
+    'billedAmount': IDL.Text, 'approvedAmount': IDL.Text,
+    'icdCode': IDL.Text, 'procedureDetails': IDL.Text, 'claimType': IDL.Text,
+    'status': IDL.Text, 'rejectionRemarks': IDL.Text, 'settlementDate': IDL.Text,
+    'documentChecklist': IDL.Vec(DocChecklistItem),
+    'createdAt': IDL.Int, 'updatedAt': IDL.Int,
+  });
+  const ClaimRequest = IDL.Record({
+    'patientId': IDL.Text, 'patientName': IDL.Text, 'preAuthId': IDL.Text,
+    'packageCode': IDL.Text, 'packageName': IDL.Text, 'diagnosisName': IDL.Text,
+    'schemeType': IDL.Text, 'payerName': IDL.Text,
+    'admissionDate': IDL.Text, 'dischargeDate': IDL.Text,
+    'billedAmount': IDL.Text, 'approvedAmount': IDL.Text,
+    'icdCode': IDL.Text, 'procedureDetails': IDL.Text, 'claimType': IDL.Text,
+    'documentChecklist': IDL.Vec(DocChecklistItem),
+  });
+  const ClaimResult = IDL.Variant({ 'ok': IDL.Text, 'err': IDL.Text });
+  const PaymentRecord = IDL.Record({
+    'id': IDL.Text, 'claimId': IDL.Text, 'patientId': IDL.Text, 'patientName': IDL.Text,
+    'payerName': IDL.Text, 'billedAmount': IDL.Text, 'approvedAmount': IDL.Text,
+    'paidAmount': IDL.Text, 'paymentMode': IDL.Text, 'transactionRef': IDL.Text,
+    'paymentDate': IDL.Text, 'settlementStatus': IDL.Text, 'discrepancyRemarks': IDL.Text,
+    'reconciledAt': IDL.Int, 'createdAt': IDL.Int, 'updatedAt': IDL.Int,
+  });
+  const PaymentRequest = IDL.Record({
+    'claimId': IDL.Text, 'patientId': IDL.Text, 'patientName': IDL.Text,
+    'payerName': IDL.Text, 'billedAmount': IDL.Text, 'approvedAmount': IDL.Text,
+    'paidAmount': IDL.Text, 'paymentMode': IDL.Text, 'transactionRef': IDL.Text,
+    'paymentDate': IDL.Text, 'discrepancyRemarks': IDL.Text,
+  });
+  const PaymentResult = IDL.Variant({ 'ok': IDL.Text, 'err': IDL.Text });
+  const MasterResult = IDL.Variant({ 'ok': IDL.Text, 'err': IDL.Text });
+  const HospitalMasterRequest = IDL.Record({
+    'name': IDL.Text, 'code': IDL.Text, 'address': IDL.Text,
+    'nabhNumber': IDL.Text, 'rohiniId': IDL.Text, 'contactPerson': IDL.Text,
+    'phone': IDL.Text, 'email': IDL.Text, 'isActive': IDL.Bool,
+  });
+  const HospitalMaster = IDL.Record({
+    'id': IDL.Text, 'name': IDL.Text, 'code': IDL.Text, 'address': IDL.Text,
+    'nabhNumber': IDL.Text, 'rohiniId': IDL.Text, 'contactPerson': IDL.Text,
+    'phone': IDL.Text, 'email': IDL.Text, 'isActive': IDL.Bool,
+    'createdAt': IDL.Int, 'updatedAt': IDL.Int,
+  });
+  const DoctorMasterRequest = IDL.Record({
+    'name': IDL.Text, 'registrationNumber': IDL.Text, 'specialisation': IDL.Text,
+    'department': IDL.Text, 'phone': IDL.Text, 'email': IDL.Text, 'isActive': IDL.Bool,
+  });
+  const DoctorMaster = IDL.Record({
+    'id': IDL.Text, 'name': IDL.Text, 'registrationNumber': IDL.Text,
+    'specialisation': IDL.Text, 'department': IDL.Text,
+    'phone': IDL.Text, 'email': IDL.Text, 'isActive': IDL.Bool,
+    'createdAt': IDL.Int, 'updatedAt': IDL.Int,
+  });
+  const TpaMasterRequest = IDL.Record({
+    'name': IDL.Text, 'code': IDL.Text, 'tpaType': IDL.Text,
+    'contactPerson': IDL.Text, 'phone': IDL.Text, 'email': IDL.Text, 'isActive': IDL.Bool,
+  });
+  const TpaMaster = IDL.Record({
+    'id': IDL.Text, 'name': IDL.Text, 'code': IDL.Text, 'tpaType': IDL.Text,
+    'contactPerson': IDL.Text, 'phone': IDL.Text, 'email': IDL.Text,
+    'isActive': IDL.Bool, 'createdAt': IDL.Int, 'updatedAt': IDL.Int,
+  });
+  const IcdMasterRequest = IDL.Record({
+    'code': IDL.Text, 'description': IDL.Text, 'category': IDL.Text, 'isActive': IDL.Bool,
+  });
+  const IcdMaster = IDL.Record({
+    'id': IDL.Text, 'code': IDL.Text, 'description': IDL.Text,
+    'category': IDL.Text, 'isActive': IDL.Bool,
+    'createdAt': IDL.Int, 'updatedAt': IDL.Int,
+  });
+  const WardMasterRequest = IDL.Record({
+    'name': IDL.Text, 'wardType': IDL.Text, 'ratePerDay': IDL.Text,
+    'totalBeds': IDL.Nat, 'isActive': IDL.Bool,
+  });
+  const WardMaster = IDL.Record({
+    'id': IDL.Text, 'name': IDL.Text, 'wardType': IDL.Text,
+    'ratePerDay': IDL.Text, 'totalBeds': IDL.Nat, 'isActive': IDL.Bool,
+    'createdAt': IDL.Int, 'updatedAt': IDL.Int,
+  });
+
   return IDL.Service({
-    'getApiKeySet' : IDL.Func([], [IDL.Bool], ['query']),
-    'getPackageInfo' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Text], []),
-    'setApiKey' : IDL.Func([IDL.Text], [], []),
-    'transformOpenAiJsonResponse' : IDL.Func(
-        [TransformationInput],
-        [TransformationOutput],
-        ['query'],
-      ),
+    '_caffeineStorageBlobIsLive' : IDL.Func([IDL.Vec(IDL.Nat8)],[IDL.Bool],['query']),
+    '_caffeineStorageBlobsToDelete' : IDL.Func([],[IDL.Vec(IDL.Vec(IDL.Nat8))],['query']),
+    '_caffeineStorageConfirmBlobDeletion' : IDL.Func([IDL.Vec(IDL.Vec(IDL.Nat8))],[],[]),
+    '_caffeineStorageCreateCertificate' : IDL.Func([IDL.Text],[_CaffeineStorageCreateCertificateResult],[]),
+    '_caffeineStorageRefillCashier' : IDL.Func([IDL.Opt(_CaffeineStorageRefillInformation)],[_CaffeineStorageRefillResult],[]),
+    '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([],[],[]),
+    '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text],[],[]),
+    'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole],[],[]),
+    'getCallerUserRole' : IDL.Func([],[UserRole],['query']),
+    'isCallerAdmin' : IDL.Func([],[IDL.Bool],['query']),
+    'registerPatient' : IDL.Func([RegisterRequest],[RegisterResult],[]),
+    'getPatients' : IDL.Func([],[IDL.Vec(Patient)],['query']),
+    'getPatientById' : IDL.Func([IDL.Text],[IDL.Opt(Patient)],['query']),
+    'getPatientByAbhaId' : IDL.Func([IDL.Text],[IDL.Opt(Patient)],['query']),
+    'searchPatients' : IDL.Func([IDL.Text],[IDL.Vec(Patient)],['query']),
+    'updateEligibility' : IDL.Func([IDL.Text, IDL.Text],[IDL.Bool],[]),
+    'addDocument' : IDL.Func([IDL.Text, IDL.Text, IDL.Text],[IDL.Bool],[]),
+    'getPatientsByStatus' : IDL.Func([IDL.Text],[IDL.Vec(Patient)],['query']),
+    'createPreAuth' : IDL.Func([PreAuthRequest],[PreAuthResult],[]),
+    'getPreAuths' : IDL.Func([],[IDL.Vec(PreAuthRecord)],['query']),
+    'getPreAuthById' : IDL.Func([IDL.Text],[IDL.Opt(PreAuthRecord)],['query']),
+    'getPreAuthsByPatient' : IDL.Func([IDL.Text],[IDL.Vec(PreAuthRecord)],['query']),
+    'updatePreAuthStatus' : IDL.Func([IDL.Text, IDL.Text, IDL.Text],[IDL.Bool],[]),
+    'addQueryResponse' : IDL.Func([IDL.Text, IDL.Text, IDL.Bool],[IDL.Bool],[]),
+    'getPreAuthsByStatus' : IDL.Func([IDL.Text],[IDL.Vec(PreAuthRecord)],['query']),
+    'createClinicalDoc' : IDL.Func([ClinicalDocRequest],[ClinicalDocResult],[]),
+    'getClinicalDocs' : IDL.Func([],[IDL.Vec(ClinicalDocRecord)],['query']),
+    'getClinicalDocById' : IDL.Func([IDL.Text],[IDL.Opt(ClinicalDocRecord)],['query']),
+    'getClinicalDocsByPatient' : IDL.Func([IDL.Text],[IDL.Vec(ClinicalDocRecord)],['query']),
+    'updateClinicalDoc' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Vec(ClinicalDocChecklistItem), IDL.Text],[IDL.Bool],[]),
+    'getClinicalDocsByStatus' : IDL.Func([IDL.Text],[IDL.Vec(ClinicalDocRecord)],['query']),
+    'createClaim' : IDL.Func([ClaimRequest],[ClaimResult],[]),
+    'getClaims' : IDL.Func([],[IDL.Vec(ClaimRecord)],['query']),
+    'getClaimById' : IDL.Func([IDL.Text],[IDL.Opt(ClaimRecord)],['query']),
+    'getClaimsByPatient' : IDL.Func([IDL.Text],[IDL.Vec(ClaimRecord)],['query']),
+    'getClaimsByPreAuth' : IDL.Func([IDL.Text],[IDL.Vec(ClaimRecord)],['query']),
+    'updateClaimStatus' : IDL.Func([IDL.Text, IDL.Text, IDL.Text],[IDL.Bool],[]),
+    'getClaimsByStatus' : IDL.Func([IDL.Text],[IDL.Vec(ClaimRecord)],['query']),
+    'createPayment' : IDL.Func([PaymentRequest],[PaymentResult],[]),
+    'getPayments' : IDL.Func([],[IDL.Vec(PaymentRecord)],['query']),
+    'getPaymentById' : IDL.Func([IDL.Text],[IDL.Opt(PaymentRecord)],['query']),
+    'getPaymentsByPatient' : IDL.Func([IDL.Text],[IDL.Vec(PaymentRecord)],['query']),
+    'getPaymentsByClaimId' : IDL.Func([IDL.Text],[IDL.Vec(PaymentRecord)],['query']),
+    'getPaymentsByStatus' : IDL.Func([IDL.Text],[IDL.Vec(PaymentRecord)],['query']),
+    'updatePaymentStatus' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text],[IDL.Bool],[]),
+    'createHospital' : IDL.Func([HospitalMasterRequest],[MasterResult],[]),
+    'getHospitals' : IDL.Func([],[IDL.Vec(HospitalMaster)],['query']),
+    'updateHospital' : IDL.Func([IDL.Text, HospitalMasterRequest],[IDL.Bool],[]),
+    'deleteHospital' : IDL.Func([IDL.Text],[IDL.Bool],[]),
+    'createDoctor' : IDL.Func([DoctorMasterRequest],[MasterResult],[]),
+    'getDoctors' : IDL.Func([],[IDL.Vec(DoctorMaster)],['query']),
+    'updateDoctor' : IDL.Func([IDL.Text, DoctorMasterRequest],[IDL.Bool],[]),
+    'deleteDoctor' : IDL.Func([IDL.Text],[IDL.Bool],[]),
+    'createTpa' : IDL.Func([TpaMasterRequest],[MasterResult],[]),
+    'getTpas' : IDL.Func([],[IDL.Vec(TpaMaster)],['query']),
+    'updateTpa' : IDL.Func([IDL.Text, TpaMasterRequest],[IDL.Bool],[]),
+    'deleteTpa' : IDL.Func([IDL.Text],[IDL.Bool],[]),
+    'createIcd' : IDL.Func([IcdMasterRequest],[MasterResult],[]),
+    'getIcds' : IDL.Func([],[IDL.Vec(IcdMaster)],['query']),
+    'updateIcd' : IDL.Func([IDL.Text, IcdMasterRequest],[IDL.Bool],[]),
+    'deleteIcd' : IDL.Func([IDL.Text],[IDL.Bool],[]),
+    'createWard' : IDL.Func([WardMasterRequest],[MasterResult],[]),
+    'getWards' : IDL.Func([],[IDL.Vec(WardMaster)],['query']),
+    'updateWard' : IDL.Func([IDL.Text, WardMasterRequest],[IDL.Bool],[]),
+    'deleteWard' : IDL.Func([IDL.Text],[IDL.Bool],[]),
   });
 };
 

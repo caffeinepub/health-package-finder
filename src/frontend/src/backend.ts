@@ -89,88 +89,360 @@ export class ExternalBlob {
         return this;
     }
 }
-export interface TransformationInput {
-    context: Uint8Array;
-    response: http_request_result;
+export interface _CaffeineStorageCreateCertificateResult {
+    method: string;
+    blob_hash: string;
 }
-export interface TransformationOutput {
-    status: bigint;
-    body: Uint8Array;
-    headers: Array<http_header>;
+export interface _CaffeineStorageRefillResult {
+    success?: boolean;
+    topped_up_amount?: bigint;
 }
-export interface http_header {
-    value: string;
-    name: string;
+export interface _CaffeineStorageRefillInformation {
+    proposed_top_up_amount?: bigint;
 }
-export interface http_request_result {
-    status: bigint;
-    body: Uint8Array;
-    headers: Array<http_header>;
+export enum UserRole {
+    admin = "admin",
+    user = "user",
+    guest = "guest"
 }
 export interface backendInterface {
-    getApiKeySet(): Promise<boolean>;
-    getPackageInfo(packageName: string, packageCode: string, speciality: string): Promise<string>;
-    setApiKey(key: string): Promise<void>;
-    transformOpenAiJsonResponse(input: TransformationInput): Promise<TransformationOutput>;
+    _caffeineStorageBlobIsLive(hash: Uint8Array): Promise<boolean>;
+    _caffeineStorageBlobsToDelete(): Promise<Array<Uint8Array>>;
+    _caffeineStorageConfirmBlobDeletion(blobs: Array<Uint8Array>): Promise<void>;
+    _caffeineStorageCreateCertificate(blobHash: string): Promise<_CaffeineStorageCreateCertificateResult>;
+    _caffeineStorageRefillCashier(refillInformation: _CaffeineStorageRefillInformation | null): Promise<_CaffeineStorageRefillResult>;
+    _caffeineStorageUpdateGatewayPrincipals(): Promise<void>;
+    _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
+    assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    getCallerUserRole(): Promise<UserRole>;
+    isCallerAdmin(): Promise<boolean>;
+    // Patient
+    registerPatient(req: import('./backend.d').RegisterRequest): Promise<import('./backend.d').RegisterResult>;
+    getPatients(): Promise<Array<import('./backend.d').Patient>>;
+    getPatientById(id: string): Promise<[] | [import('./backend.d').Patient]>;
+    getPatientByAbhaId(abhaId: string): Promise<[] | [import('./backend.d').Patient]>;
+    searchPatients(searchTerm: string): Promise<Array<import('./backend.d').Patient>>;
+    updateEligibility(id: string, status: string): Promise<boolean>;
+    addDocument(patientId: string, documentId: string, docType: string): Promise<boolean>;
+    getPatientsByStatus(status: string): Promise<Array<import('./backend.d').Patient>>;
+    // Pre-Auth
+    createPreAuth(req: import('./backend.d').PreAuthRequest): Promise<import('./backend.d').PreAuthResult>;
+    getPreAuths(): Promise<Array<import('./backend.d').PreAuthRecord>>;
+    getPreAuthById(id: string): Promise<[] | [import('./backend.d').PreAuthRecord]>;
+    getPreAuthsByPatient(patientId: string): Promise<Array<import('./backend.d').PreAuthRecord>>;
+    updatePreAuthStatus(id: string, status: string, remarks: string): Promise<boolean>;
+    addQueryResponse(id: string, message: string, fromTPA: boolean): Promise<boolean>;
+    getPreAuthsByStatus(status: string): Promise<Array<import('./backend.d').PreAuthRecord>>;
+    // Clinical Docs
+    createClinicalDoc(req: import('./backend.d').ClinicalDocRequest): Promise<import('./backend.d').ClinicalDocResult>;
+    getClinicalDocs(): Promise<Array<import('./backend.d').ClinicalDocRecord>>;
+    getClinicalDocById(id: string): Promise<[] | [import('./backend.d').ClinicalDocRecord]>;
+    getClinicalDocsByPatient(patientId: string): Promise<Array<import('./backend.d').ClinicalDocRecord>>;
+    updateClinicalDoc(id: string, doctorNotes: string, dischargeSummary: string, documentChecklist: Array<import('./backend.d').ClinicalDocChecklistItem>, status: string): Promise<boolean>;
+    getClinicalDocsByStatus(status: string): Promise<Array<import('./backend.d').ClinicalDocRecord>>;
+    // Claims
+    createClaim(req: import('./backend.d').ClaimRequest): Promise<import('./backend.d').ClaimResult>;
+    getClaims(): Promise<Array<import('./backend.d').ClaimRecord>>;
+    getClaimById(id: string): Promise<[] | [import('./backend.d').ClaimRecord]>;
+    getClaimsByPatient(patientId: string): Promise<Array<import('./backend.d').ClaimRecord>>;
+    getClaimsByPreAuth(preAuthId: string): Promise<Array<import('./backend.d').ClaimRecord>>;
+    updateClaimStatus(id: string, status: string, remarks: string): Promise<boolean>;
+    getClaimsByStatus(status: string): Promise<Array<import('./backend.d').ClaimRecord>>;
+    // Payments
+    createPayment(req: import('./backend.d').PaymentRequest): Promise<import('./backend.d').PaymentResult>;
+    getPayments(): Promise<Array<import('./backend.d').PaymentRecord>>;
+    getPaymentById(id: string): Promise<[] | [import('./backend.d').PaymentRecord]>;
+    getPaymentsByPatient(patientId: string): Promise<Array<import('./backend.d').PaymentRecord>>;
+    getPaymentsByClaimId(claimId: string): Promise<Array<import('./backend.d').PaymentRecord>>;
+    getPaymentsByStatus(status: string): Promise<Array<import('./backend.d').PaymentRecord>>;
+    updatePaymentStatus(id: string, settlementStatus: string, paidAmount: string, transactionRef: string, discrepancyRemarks: string): Promise<boolean>;
+    // Masters
+    createHospital(req: import('./backend.d').HospitalMasterRequest): Promise<import('./backend.d').MasterResult>;
+    getHospitals(): Promise<Array<import('./backend.d').HospitalMaster>>;
+    updateHospital(id: string, req: import('./backend.d').HospitalMasterRequest): Promise<boolean>;
+    deleteHospital(id: string): Promise<boolean>;
+    createDoctor(req: import('./backend.d').DoctorMasterRequest): Promise<import('./backend.d').MasterResult>;
+    getDoctors(): Promise<Array<import('./backend.d').DoctorMaster>>;
+    updateDoctor(id: string, req: import('./backend.d').DoctorMasterRequest): Promise<boolean>;
+    deleteDoctor(id: string): Promise<boolean>;
+    createTpa(req: import('./backend.d').TpaMasterRequest): Promise<import('./backend.d').MasterResult>;
+    getTpas(): Promise<Array<import('./backend.d').TpaMaster>>;
+    updateTpa(id: string, req: import('./backend.d').TpaMasterRequest): Promise<boolean>;
+    deleteTpa(id: string): Promise<boolean>;
+    createIcd(req: import('./backend.d').IcdMasterRequest): Promise<import('./backend.d').MasterResult>;
+    getIcds(): Promise<Array<import('./backend.d').IcdMaster>>;
+    updateIcd(id: string, req: import('./backend.d').IcdMasterRequest): Promise<boolean>;
+    deleteIcd(id: string): Promise<boolean>;
+    createWard(req: import('./backend.d').WardMasterRequest): Promise<import('./backend.d').MasterResult>;
+    getWards(): Promise<Array<import('./backend.d').WardMaster>>;
+    updateWard(id: string, req: import('./backend.d').WardMasterRequest): Promise<boolean>;
+    deleteWard(id: string): Promise<boolean>;
 }
+import type { UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
-    async getApiKeySet(): Promise<boolean> {
+    async _caffeineStorageBlobIsLive(arg0: Uint8Array): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor.getApiKeySet();
+                const result = await this.actor._caffeineStorageBlobIsLive(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getApiKeySet();
+            const result = await this.actor._caffeineStorageBlobIsLive(arg0);
             return result;
         }
     }
-    async getPackageInfo(arg0: string, arg1: string, arg2: string): Promise<string> {
+    async _caffeineStorageBlobsToDelete(): Promise<Array<Uint8Array>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getPackageInfo(arg0, arg1, arg2);
+                const result = await this.actor._caffeineStorageBlobsToDelete();
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getPackageInfo(arg0, arg1, arg2);
+            const result = await this.actor._caffeineStorageBlobsToDelete();
             return result;
         }
     }
-    async setApiKey(arg0: string): Promise<void> {
+    async _caffeineStorageConfirmBlobDeletion(arg0: Array<Uint8Array>): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.setApiKey(arg0);
+                const result = await this.actor._caffeineStorageConfirmBlobDeletion(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.setApiKey(arg0);
+            const result = await this.actor._caffeineStorageConfirmBlobDeletion(arg0);
             return result;
         }
     }
-    async transformOpenAiJsonResponse(arg0: TransformationInput): Promise<TransformationOutput> {
+    async _caffeineStorageCreateCertificate(arg0: string): Promise<_CaffeineStorageCreateCertificateResult> {
         if (this.processError) {
             try {
-                const result = await this.actor.transformOpenAiJsonResponse(arg0);
+                const result = await this.actor._caffeineStorageCreateCertificate(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.transformOpenAiJsonResponse(arg0);
+            const result = await this.actor._caffeineStorageCreateCertificate(arg0);
             return result;
         }
     }
+    async _caffeineStorageRefillCashier(arg0: _CaffeineStorageRefillInformation | null): Promise<_CaffeineStorageRefillResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor._caffeineStorageRefillCashier(to_candid_opt_n1(this._uploadFile, this._downloadFile, arg0));
+                return from_candid__CaffeineStorageRefillResult_n4(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor._caffeineStorageRefillCashier(to_candid_opt_n1(this._uploadFile, this._downloadFile, arg0));
+            return from_candid__CaffeineStorageRefillResult_n4(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async _caffeineStorageUpdateGatewayPrincipals(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor._caffeineStorageUpdateGatewayPrincipals();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor._caffeineStorageUpdateGatewayPrincipals();
+            return result;
+        }
+    }
+    async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor._initializeAccessControlWithSecret(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor._initializeAccessControlWithSecret(arg0);
+            return result;
+        }
+    }
+    async assignCallerUserRole(arg0: Principal, arg1: UserRole): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n8(this._uploadFile, this._downloadFile, arg1));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n8(this._uploadFile, this._downloadFile, arg1));
+            return result;
+        }
+    }
+    async getCallerUserRole(): Promise<UserRole> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getCallerUserRole();
+                return from_candid_UserRole_n10(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getCallerUserRole();
+            return from_candid_UserRole_n10(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async isCallerAdmin(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.isCallerAdmin();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.isCallerAdmin();
+            return result;
+        }
+    }
+    // RCM & Masters methods - direct pass-through to actor
+    async registerPatient(req: any): Promise<any> { return (this.actor as any).registerPatient(req); }
+    async getPatients(): Promise<any[]> { return (this.actor as any).getPatients(); }
+    async getPatientById(id: string): Promise<any> { return (this.actor as any).getPatientById(id); }
+    async getPatientByAbhaId(abhaId: string): Promise<any> { return (this.actor as any).getPatientByAbhaId(abhaId); }
+    async searchPatients(searchTerm: string): Promise<any[]> { return (this.actor as any).searchPatients(searchTerm); }
+    async updateEligibility(id: string, status: string): Promise<boolean> { return (this.actor as any).updateEligibility(id, status); }
+    async addDocument(patientId: string, documentId: string, docType: string): Promise<boolean> { return (this.actor as any).addDocument(patientId, documentId, docType); }
+    async getPatientsByStatus(status: string): Promise<any[]> { return (this.actor as any).getPatientsByStatus(status); }
+    async createPreAuth(req: any): Promise<any> { return (this.actor as any).createPreAuth(req); }
+    async getPreAuths(): Promise<any[]> { return (this.actor as any).getPreAuths(); }
+    async getPreAuthById(id: string): Promise<any> { return (this.actor as any).getPreAuthById(id); }
+    async getPreAuthsByPatient(patientId: string): Promise<any[]> { return (this.actor as any).getPreAuthsByPatient(patientId); }
+    async updatePreAuthStatus(id: string, status: string, remarks: string): Promise<boolean> { return (this.actor as any).updatePreAuthStatus(id, status, remarks); }
+    async addQueryResponse(id: string, message: string, fromTPA: boolean): Promise<boolean> { return (this.actor as any).addQueryResponse(id, message, fromTPA); }
+    async getPreAuthsByStatus(status: string): Promise<any[]> { return (this.actor as any).getPreAuthsByStatus(status); }
+    async createClinicalDoc(req: any): Promise<any> { return (this.actor as any).createClinicalDoc(req); }
+    async getClinicalDocs(): Promise<any[]> { return (this.actor as any).getClinicalDocs(); }
+    async getClinicalDocById(id: string): Promise<any> { return (this.actor as any).getClinicalDocById(id); }
+    async getClinicalDocsByPatient(patientId: string): Promise<any[]> { return (this.actor as any).getClinicalDocsByPatient(patientId); }
+    async updateClinicalDoc(id: string, doctorNotes: string, dischargeSummary: string, documentChecklist: any[], status: string): Promise<boolean> { return (this.actor as any).updateClinicalDoc(id, doctorNotes, dischargeSummary, documentChecklist, status); }
+    async getClinicalDocsByStatus(status: string): Promise<any[]> { return (this.actor as any).getClinicalDocsByStatus(status); }
+    async createClaim(req: any): Promise<any> { return (this.actor as any).createClaim(req); }
+    async getClaims(): Promise<any[]> { return (this.actor as any).getClaims(); }
+    async getClaimById(id: string): Promise<any> { return (this.actor as any).getClaimById(id); }
+    async getClaimsByPatient(patientId: string): Promise<any[]> { return (this.actor as any).getClaimsByPatient(patientId); }
+    async getClaimsByPreAuth(preAuthId: string): Promise<any[]> { return (this.actor as any).getClaimsByPreAuth(preAuthId); }
+    async updateClaimStatus(id: string, status: string, remarks: string): Promise<boolean> { return (this.actor as any).updateClaimStatus(id, status, remarks); }
+    async getClaimsByStatus(status: string): Promise<any[]> { return (this.actor as any).getClaimsByStatus(status); }
+    async createPayment(req: any): Promise<any> { return (this.actor as any).createPayment(req); }
+    async getPayments(): Promise<any[]> { return (this.actor as any).getPayments(); }
+    async getPaymentById(id: string): Promise<any> { return (this.actor as any).getPaymentById(id); }
+    async getPaymentsByPatient(patientId: string): Promise<any[]> { return (this.actor as any).getPaymentsByPatient(patientId); }
+    async getPaymentsByClaimId(claimId: string): Promise<any[]> { return (this.actor as any).getPaymentsByClaimId(claimId); }
+    async getPaymentsByStatus(status: string): Promise<any[]> { return (this.actor as any).getPaymentsByStatus(status); }
+    async updatePaymentStatus(id: string, settlementStatus: string, paidAmount: string, transactionRef: string, discrepancyRemarks: string): Promise<boolean> { return (this.actor as any).updatePaymentStatus(id, settlementStatus, paidAmount, transactionRef, discrepancyRemarks); }
+    async createHospital(req: any): Promise<any> { return (this.actor as any).createHospital(req); }
+    async getHospitals(): Promise<any[]> { return (this.actor as any).getHospitals(); }
+    async updateHospital(id: string, req: any): Promise<boolean> { return (this.actor as any).updateHospital(id, req); }
+    async deleteHospital(id: string): Promise<boolean> { return (this.actor as any).deleteHospital(id); }
+    async createDoctor(req: any): Promise<any> { return (this.actor as any).createDoctor(req); }
+    async getDoctors(): Promise<any[]> { return (this.actor as any).getDoctors(); }
+    async updateDoctor(id: string, req: any): Promise<boolean> { return (this.actor as any).updateDoctor(id, req); }
+    async deleteDoctor(id: string): Promise<boolean> { return (this.actor as any).deleteDoctor(id); }
+    async createTpa(req: any): Promise<any> { return (this.actor as any).createTpa(req); }
+    async getTpas(): Promise<any[]> { return (this.actor as any).getTpas(); }
+    async updateTpa(id: string, req: any): Promise<boolean> { return (this.actor as any).updateTpa(id, req); }
+    async deleteTpa(id: string): Promise<boolean> { return (this.actor as any).deleteTpa(id); }
+    async createIcd(req: any): Promise<any> { return (this.actor as any).createIcd(req); }
+    async getIcds(): Promise<any[]> { return (this.actor as any).getIcds(); }
+    async updateIcd(id: string, req: any): Promise<boolean> { return (this.actor as any).updateIcd(id, req); }
+    async deleteIcd(id: string): Promise<boolean> { return (this.actor as any).deleteIcd(id); }
+    async createWard(req: any): Promise<any> { return (this.actor as any).createWard(req); }
+    async getWards(): Promise<any[]> { return (this.actor as any).getWards(); }
+    async updateWard(id: string, req: any): Promise<boolean> { return (this.actor as any).updateWard(id, req); }
+    async deleteWard(id: string): Promise<boolean> { return (this.actor as any).deleteWard(id); }
+}
+function from_candid_UserRole_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
+    return from_candid_variant_n11(_uploadFile, _downloadFile, value);
+}
+function from_candid__CaffeineStorageRefillResult_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: __CaffeineStorageRefillResult): _CaffeineStorageRefillResult {
+    return from_candid_record_n5(_uploadFile, _downloadFile, value);
+}
+function from_candid_opt_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [boolean]): boolean | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [bigint]): bigint | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_record_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    success: [] | [boolean];
+    topped_up_amount: [] | [bigint];
+}): {
+    success?: boolean;
+    topped_up_amount?: bigint;
+} {
+    return {
+        success: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.success)),
+        topped_up_amount: record_opt_to_undefined(from_candid_opt_n7(_uploadFile, _downloadFile, value.topped_up_amount))
+    };
+}
+function from_candid_variant_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    admin: null;
+} | {
+    user: null;
+} | {
+    guest: null;
+}): UserRole {
+    return "admin" in value ? UserRole.admin : "user" in value ? UserRole.user : "guest" in value ? UserRole.guest : value;
+}
+function to_candid_UserRole_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
+    return to_candid_variant_n9(_uploadFile, _downloadFile, value);
+}
+function to_candid__CaffeineStorageRefillInformation_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _CaffeineStorageRefillInformation): __CaffeineStorageRefillInformation {
+    return to_candid_record_n3(_uploadFile, _downloadFile, value);
+}
+function to_candid_opt_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _CaffeineStorageRefillInformation | null): [] | [__CaffeineStorageRefillInformation] {
+    return value === null ? candid_none() : candid_some(to_candid__CaffeineStorageRefillInformation_n2(_uploadFile, _downloadFile, value));
+}
+function to_candid_record_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    proposed_top_up_amount?: bigint;
+}): {
+    proposed_top_up_amount: [] | [bigint];
+} {
+    return {
+        proposed_top_up_amount: value.proposed_top_up_amount ? candid_some(value.proposed_top_up_amount) : candid_none()
+    };
+}
+function to_candid_variant_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): {
+    admin: null;
+} | {
+    user: null;
+} | {
+    guest: null;
+} {
+    return value == UserRole.admin ? {
+        admin: null
+    } : value == UserRole.user ? {
+        user: null
+    } : value == UserRole.guest ? {
+        guest: null
+    } : value;
 }
 export interface CreateActorOptions {
     agent?: Agent;

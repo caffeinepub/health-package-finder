@@ -10,29 +10,236 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
-export interface TransformationInput {
-  'context' : Uint8Array,
-  'response' : http_request_result,
+export type UserRole = { 'admin' : null } |
+  { 'user' : null } |
+  { 'guest' : null };
+export interface _CaffeineStorageCreateCertificateResult {
+  'method' : string,
+  'blob_hash' : string,
 }
-export interface TransformationOutput {
-  'status' : bigint,
-  'body' : Uint8Array,
-  'headers' : Array<http_header>,
+export interface _CaffeineStorageRefillInformation {
+  'proposed_top_up_amount' : [] | [bigint],
 }
-export interface http_header { 'value' : string, 'name' : string }
-export interface http_request_result {
-  'status' : bigint,
-  'body' : Uint8Array,
-  'headers' : Array<http_header>,
+export interface _CaffeineStorageRefillResult {
+  'success' : [] | [boolean],
+  'topped_up_amount' : [] | [bigint],
 }
+
+// Patient
+export interface DocumentRef { documentId: string; docType: string; }
+export interface Patient {
+  id: string; abhaId: string; name: string; dob: string; gender: string;
+  phone: string; address: string; payerType: string; payerName: string;
+  policyNumber: string; policyStart: string; policyEnd: string;
+  eligibilityStatus: string; eligibilityCheckedAt: bigint;
+  documents: Array<DocumentRef>; createdAt: bigint; createdBy: string;
+}
+export interface RegisterRequest {
+  abhaId: string; name: string; dob: string; gender: string; phone: string;
+  address: string; payerType: string; payerName: string;
+  policyNumber: string; policyStart: string; policyEnd: string;
+}
+export type RegisterResult = { 'ok': string } | { 'err': string };
+
+// Pre-Auth
+export interface QueryMessage { message: string; fromTPA: boolean; timestamp: bigint; }
+export interface DocChecklistItem { docName: string; required: boolean; submitted: boolean; }
+export interface PreAuthRecord {
+  id: string; patientId: string; patientName: string;
+  packageCode: string; packageName: string; diagnosisName: string;
+  schemeType: string; payerName: string; requestedAmount: string;
+  status: string; submittedAt: bigint; updatedAt: bigint;
+  expectedTATHours: bigint; remarks: string;
+  queries: Array<QueryMessage>; documentChecklist: Array<DocChecklistItem>;
+}
+export interface PreAuthRequest {
+  patientId: string; patientName: string; packageCode: string;
+  packageName: string; diagnosisName: string; schemeType: string;
+  payerName: string; requestedAmount: string;
+  expectedTATHours: bigint; documentChecklist: Array<DocChecklistItem>;
+}
+export type PreAuthResult = { 'ok': string } | { 'err': string };
+
+// Clinical Docs
+export interface ClinicalDocChecklistItem {
+  docName: string; packageCode: string; required: boolean; submitted: boolean; docType: string;
+}
+export interface ClinicalDocRecord {
+  id: string; patientId: string; patientName: string;
+  packageCodes: Array<string>; packageNames: Array<string>;
+  doctorNotes: string; dischargeSummary: string;
+  documentChecklist: Array<ClinicalDocChecklistItem>;
+  status: string; createdAt: bigint; updatedAt: bigint;
+}
+export interface ClinicalDocRequest {
+  patientId: string; patientName: string;
+  packageCodes: Array<string>; packageNames: Array<string>;
+  doctorNotes: string; dischargeSummary: string;
+  documentChecklist: Array<ClinicalDocChecklistItem>;
+}
+export type ClinicalDocResult = { 'ok': string } | { 'err': string };
+
+// Claims
+export interface ClaimRecord {
+  id: string; patientId: string; patientName: string; preAuthId: string;
+  packageCode: string; packageName: string; diagnosisName: string;
+  schemeType: string; payerName: string;
+  admissionDate: string; dischargeDate: string;
+  billedAmount: string; approvedAmount: string;
+  icdCode: string; procedureDetails: string; claimType: string;
+  status: string; rejectionRemarks: string; settlementDate: string;
+  documentChecklist: Array<DocChecklistItem>;
+  createdAt: bigint; updatedAt: bigint;
+}
+export interface ClaimRequest {
+  patientId: string; patientName: string; preAuthId: string;
+  packageCode: string; packageName: string; diagnosisName: string;
+  schemeType: string; payerName: string;
+  admissionDate: string; dischargeDate: string;
+  billedAmount: string; approvedAmount: string;
+  icdCode: string; procedureDetails: string; claimType: string;
+  documentChecklist: Array<DocChecklistItem>;
+}
+export type ClaimResult = { 'ok': string } | { 'err': string };
+
+// Payments
+export interface PaymentRecord {
+  id: string; claimId: string; patientId: string; patientName: string;
+  payerName: string; billedAmount: string; approvedAmount: string;
+  paidAmount: string; paymentMode: string; transactionRef: string;
+  paymentDate: string; settlementStatus: string; discrepancyRemarks: string;
+  reconciledAt: bigint; createdAt: bigint; updatedAt: bigint;
+}
+export interface PaymentRequest {
+  claimId: string; patientId: string; patientName: string;
+  payerName: string; billedAmount: string; approvedAmount: string;
+  paidAmount: string; paymentMode: string; transactionRef: string;
+  paymentDate: string; discrepancyRemarks: string;
+}
+export type PaymentResult = { 'ok': string } | { 'err': string };
+
+// Masters
+export type MasterResult = { 'ok': string } | { 'err': string };
+export interface HospitalMaster {
+  id: string; name: string; code: string; address: string;
+  nabhNumber: string; rohiniId: string; contactPerson: string;
+  phone: string; email: string; isActive: boolean;
+  createdAt: bigint; updatedAt: bigint;
+}
+export interface HospitalMasterRequest {
+  name: string; code: string; address: string;
+  nabhNumber: string; rohiniId: string; contactPerson: string;
+  phone: string; email: string; isActive: boolean;
+}
+export interface DoctorMaster {
+  id: string; name: string; registrationNumber: string;
+  specialisation: string; department: string;
+  phone: string; email: string; isActive: boolean;
+  createdAt: bigint; updatedAt: bigint;
+}
+export interface DoctorMasterRequest {
+  name: string; registrationNumber: string; specialisation: string;
+  department: string; phone: string; email: string; isActive: boolean;
+}
+export interface TpaMaster {
+  id: string; name: string; code: string; tpaType: string;
+  contactPerson: string; phone: string; email: string;
+  isActive: boolean; createdAt: bigint; updatedAt: bigint;
+}
+export interface TpaMasterRequest {
+  name: string; code: string; tpaType: string;
+  contactPerson: string; phone: string; email: string; isActive: boolean;
+}
+export interface IcdMaster {
+  id: string; code: string; description: string;
+  category: string; isActive: boolean;
+  createdAt: bigint; updatedAt: bigint;
+}
+export interface IcdMasterRequest {
+  code: string; description: string; category: string; isActive: boolean;
+}
+export interface WardMaster {
+  id: string; name: string; wardType: string;
+  ratePerDay: string; totalBeds: bigint; isActive: boolean;
+  createdAt: bigint; updatedAt: bigint;
+}
+export interface WardMasterRequest {
+  name: string; wardType: string; ratePerDay: string;
+  totalBeds: bigint; isActive: boolean;
+}
+
 export interface _SERVICE {
-  'getApiKeySet' : ActorMethod<[], boolean>,
-  'getPackageInfo' : ActorMethod<[string, string, string], string>,
-  'setApiKey' : ActorMethod<[string], undefined>,
-  'transformOpenAiJsonResponse' : ActorMethod<
-    [TransformationInput],
-    TransformationOutput
-  >,
+  '_caffeineStorageBlobIsLive' : ActorMethod<[Uint8Array], boolean>,
+  '_caffeineStorageBlobsToDelete' : ActorMethod<[], Array<Uint8Array>>,
+  '_caffeineStorageConfirmBlobDeletion' : ActorMethod<[Array<Uint8Array>], undefined>,
+  '_caffeineStorageCreateCertificate' : ActorMethod<[string], _CaffeineStorageCreateCertificateResult>,
+  '_caffeineStorageRefillCashier' : ActorMethod<[[] | [_CaffeineStorageRefillInformation]], _CaffeineStorageRefillResult>,
+  '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
+  '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'isCallerAdmin' : ActorMethod<[], boolean>,
+  // Patient
+  'registerPatient' : ActorMethod<[RegisterRequest], RegisterResult>,
+  'getPatients' : ActorMethod<[], Array<Patient>>,
+  'getPatientById' : ActorMethod<[string], [] | [Patient]>,
+  'getPatientByAbhaId' : ActorMethod<[string], [] | [Patient]>,
+  'searchPatients' : ActorMethod<[string], Array<Patient>>,
+  'updateEligibility' : ActorMethod<[string, string], boolean>,
+  'addDocument' : ActorMethod<[string, string, string], boolean>,
+  'getPatientsByStatus' : ActorMethod<[string], Array<Patient>>,
+  // Pre-Auth
+  'createPreAuth' : ActorMethod<[PreAuthRequest], PreAuthResult>,
+  'getPreAuths' : ActorMethod<[], Array<PreAuthRecord>>,
+  'getPreAuthById' : ActorMethod<[string], [] | [PreAuthRecord]>,
+  'getPreAuthsByPatient' : ActorMethod<[string], Array<PreAuthRecord>>,
+  'updatePreAuthStatus' : ActorMethod<[string, string, string], boolean>,
+  'addQueryResponse' : ActorMethod<[string, string, boolean], boolean>,
+  'getPreAuthsByStatus' : ActorMethod<[string], Array<PreAuthRecord>>,
+  // Clinical Docs
+  'createClinicalDoc' : ActorMethod<[ClinicalDocRequest], ClinicalDocResult>,
+  'getClinicalDocs' : ActorMethod<[], Array<ClinicalDocRecord>>,
+  'getClinicalDocById' : ActorMethod<[string], [] | [ClinicalDocRecord]>,
+  'getClinicalDocsByPatient' : ActorMethod<[string], Array<ClinicalDocRecord>>,
+  'updateClinicalDoc' : ActorMethod<[string, string, string, Array<ClinicalDocChecklistItem>, string], boolean>,
+  'getClinicalDocsByStatus' : ActorMethod<[string], Array<ClinicalDocRecord>>,
+  // Claims
+  'createClaim' : ActorMethod<[ClaimRequest], ClaimResult>,
+  'getClaims' : ActorMethod<[], Array<ClaimRecord>>,
+  'getClaimById' : ActorMethod<[string], [] | [ClaimRecord]>,
+  'getClaimsByPatient' : ActorMethod<[string], Array<ClaimRecord>>,
+  'getClaimsByPreAuth' : ActorMethod<[string], Array<ClaimRecord>>,
+  'updateClaimStatus' : ActorMethod<[string, string, string], boolean>,
+  'getClaimsByStatus' : ActorMethod<[string], Array<ClaimRecord>>,
+  // Payments
+  'createPayment' : ActorMethod<[PaymentRequest], PaymentResult>,
+  'getPayments' : ActorMethod<[], Array<PaymentRecord>>,
+  'getPaymentById' : ActorMethod<[string], [] | [PaymentRecord]>,
+  'getPaymentsByPatient' : ActorMethod<[string], Array<PaymentRecord>>,
+  'getPaymentsByClaimId' : ActorMethod<[string], Array<PaymentRecord>>,
+  'getPaymentsByStatus' : ActorMethod<[string], Array<PaymentRecord>>,
+  'updatePaymentStatus' : ActorMethod<[string, string, string, string, string], boolean>,
+  // Masters
+  'createHospital' : ActorMethod<[HospitalMasterRequest], MasterResult>,
+  'getHospitals' : ActorMethod<[], Array<HospitalMaster>>,
+  'updateHospital' : ActorMethod<[string, HospitalMasterRequest], boolean>,
+  'deleteHospital' : ActorMethod<[string], boolean>,
+  'createDoctor' : ActorMethod<[DoctorMasterRequest], MasterResult>,
+  'getDoctors' : ActorMethod<[], Array<DoctorMaster>>,
+  'updateDoctor' : ActorMethod<[string, DoctorMasterRequest], boolean>,
+  'deleteDoctor' : ActorMethod<[string], boolean>,
+  'createTpa' : ActorMethod<[TpaMasterRequest], MasterResult>,
+  'getTpas' : ActorMethod<[], Array<TpaMaster>>,
+  'updateTpa' : ActorMethod<[string, TpaMasterRequest], boolean>,
+  'deleteTpa' : ActorMethod<[string], boolean>,
+  'createIcd' : ActorMethod<[IcdMasterRequest], MasterResult>,
+  'getIcds' : ActorMethod<[], Array<IcdMaster>>,
+  'updateIcd' : ActorMethod<[string, IcdMasterRequest], boolean>,
+  'deleteIcd' : ActorMethod<[string], boolean>,
+  'createWard' : ActorMethod<[WardMasterRequest], MasterResult>,
+  'getWards' : ActorMethod<[], Array<WardMaster>>,
+  'updateWard' : ActorMethod<[string, WardMasterRequest], boolean>,
+  'deleteWard' : ActorMethod<[string], boolean>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];
