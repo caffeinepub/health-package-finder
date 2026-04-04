@@ -278,6 +278,13 @@ export interface backendInterface {
   getWards(): Promise<Array<WardMaster>>;
   updateWard(id: string, req: WardMasterRequest): Promise<boolean>;
   deleteWard(id: string): Promise<boolean>;
+  // Denial functions
+  createDenial(req: DenialRequest): Promise<DenialResult>;
+  getDenials(): Promise<Array<DenialRecord>>;
+  getDenialById(id: string): Promise<Option<DenialRecord>>;
+  getDenialsByClaimId(claimId: string): Promise<Array<DenialRecord>>;
+  getDenialsByStatus(status: string): Promise<Array<DenialRecord>>;
+  updateDenialStatus(id: string, status: string, rootCauseNotes: string, resubmitted: boolean): Promise<boolean>;
 }
 
 // Masters types
@@ -391,3 +398,39 @@ export interface WardMasterRequest {
 }
 
 export type MasterResult = { ok: string } | { err: string };
+
+// Denial & Rejection types
+export interface DenialRecord {
+  id: string;
+  claimId: string;
+  patientId: string;
+  patientName: string;
+  payerName: string;
+  schemeType: string;
+  packageCode: string;
+  packageName: string;
+  rejectionRemarks: string;
+  rejectionCategory: string;
+  rootCauseNotes: string;
+  alertSent: boolean;
+  resubmittedAt: bigint;
+  resolvedAt: bigint;
+  status: string;
+  createdAt: bigint;
+  updatedAt: bigint;
+}
+
+export interface DenialRequest {
+  claimId: string;
+  patientId: string;
+  patientName: string;
+  payerName: string;
+  schemeType: string;
+  packageCode: string;
+  packageName: string;
+  rejectionRemarks: string;
+  rejectionCategory: string;
+  rootCauseNotes: string;
+}
+
+export type DenialResult = { ok: string } | { err: string };

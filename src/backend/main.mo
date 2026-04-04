@@ -1203,6 +1203,125 @@ actor {
   };
 
   // ─────────────────────────────────────────────
+  // Denial & Rejection Management
+  // ─────────────────────────────────────────────
+
+  public type DenialRecord = {
+    id : Text;
+    claimId : Text;
+    patientId : Text;
+    patientName : Text;
+    payerName : Text;
+    schemeType : Text;
+    packageCode : Text;
+    packageName : Text;
+    rejectionRemarks : Text;
+    rejectionCategory : Text;
+    rootCauseNotes : Text;
+    alertSent : Bool;
+    resubmittedAt : Int;
+    resolvedAt : Int;
+    status : Text;
+    createdAt : Int;
+    updatedAt : Int;
+  };
+
+  public type DenialRequest = {
+    claimId : Text;
+    patientId : Text;
+    patientName : Text;
+    payerName : Text;
+    schemeType : Text;
+    packageCode : Text;
+    packageName : Text;
+    rejectionRemarks : Text;
+    rejectionCategory : Text;
+    rootCauseNotes : Text;
+  };
+
+  public type DenialResult = { #ok : Text; #err : Text };
+
+  stable var denialEntries : [(Text, DenialRecord)] = [];
+  stable var nextDenialId : Nat = 1;
+  transient var denials : HashMap.HashMap<Text, DenialRecord> =
+    HashMap.fromIter<Text, DenialRecord>(denialEntries.vals(), 10, Text.equal, Text.hash);
+
+  private func genDenialId() : Text {
+    let id = "DNL-" # Nat.toText(nextDenialId);
+    nextDenialId += 1;
+    id;
+  };
+
+  public shared func createDenial(req : DenialRequest) : async DenialResult {
+    for ((_, d) in denials.entries()) {
+      if (d.claimId == req.claimId) {
+        return #err("Denial record already exists for claim: " # req.claimId);
+      };
+    };
+    let id = genDenialId();
+    let now = Time.now();
+    denials.put(id, {
+      id; claimId = req.claimId; patientId = req.patientId;
+      patientName = req.patientName; payerName = req.payerName;
+      schemeType = req.schemeType; packageCode = req.packageCode;
+      packageName = req.packageName; rejectionRemarks = req.rejectionRemarks;
+      rejectionCategory = req.rejectionCategory; rootCauseNotes = req.rootCauseNotes;
+      alertSent = false; resubmittedAt = 0; resolvedAt = 0;
+      status = "Open"; createdAt = now; updatedAt = now
+    });
+    #ok(id);
+  };
+
+  public query func getDenials() : async [DenialRecord] {
+    Iter.toArray(denials.vals());
+  };
+
+  public query func getDenialById(id : Text) : async ?DenialRecord {
+    denials.get(id);
+  };
+
+  public query func getDenialsByClaimId(claimId : Text) : async [DenialRecord] {
+    Array.filter<DenialRecord>(
+      Iter.toArray(denials.vals()),
+      func(d) { d.claimId == claimId }
+    );
+  };
+
+  public query func getDenialsByStatus(status : Text) : async [DenialRecord] {
+    Array.filter<DenialRecord>(
+      Iter.toArray(denials.vals()),
+      func(d) { toLower(d.status) == toLower(status) }
+    );
+  };
+
+  public shared func updateDenialStatus(
+    id : Text,
+    status : Text,
+    rootCauseNotes : Text,
+    resubmitted : Bool
+  ) : async Bool {
+    switch (denials.get(id)) {
+      case null { false };
+      case (?d) {
+        let now = Time.now();
+        denials.put(id, {
+          id = d.id; claimId = d.claimId; patientId = d.patientId;
+          patientName = d.patientName; payerName = d.payerName;
+          schemeType = d.schemeType; packageCode = d.packageCode;
+          packageName = d.packageName; rejectionRemarks = d.rejectionRemarks;
+          rejectionCategory = d.rejectionCategory;
+          rootCauseNotes = if (rootCauseNotes == "") d.rootCauseNotes else rootCauseNotes;
+          alertSent = true;
+          resubmittedAt = if (resubmitted) now else d.resubmittedAt;
+          resolvedAt = if (status == "Resolved" or status == "WrittenOff") now else d.resolvedAt;
+          status; createdAt = d.createdAt; updatedAt = now
+        });
+        true;
+      };
+    };
+  };
+
+  // ─────────────────────────────────────────────
   // Upgrade hooks
   // ─────────────────────────────────────────────
 
@@ -1217,6 +1336,7 @@ actor {
     tpaEntries := Iter.toArray(tpas.entries());
     icdEntries := Iter.toArray(icds.entries());
     wardEntries := Iter.toArray(wards.entries());
+    denialEntries := Iter.toArray(denials.entries());
   };
 
   system func postupgrade() {
@@ -1240,5 +1360,7 @@ actor {
     icdEntries := [];
     wards := HashMap.fromIter<Text, WardMaster>(wardEntries.vals(), 10, Text.equal, Text.hash);
     wardEntries := [];
+    denials := HashMap.fromIter<Text, DenialRecord>(denialEntries.vals(), 10, Text.equal, Text.hash);
+    denialEntries := [];
   };
 };

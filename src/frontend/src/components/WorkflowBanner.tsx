@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import {
+  AlertTriangle,
   ArrowRight,
   ClipboardList,
   CreditCard,
@@ -14,6 +15,7 @@ const STEPS = [
   { key: "clinicaldocs", label: "Clinical Docs", icon: ClipboardList },
   { key: "claims", label: "Claims", icon: Receipt },
   { key: "payment", label: "Payment", icon: CreditCard },
+  { key: "denial", label: "Denial", icon: AlertTriangle },
 ] as const;
 
 type StepKey = (typeof STEPS)[number]["key"];

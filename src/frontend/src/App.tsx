@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import {
   Activity,
+  AlertTriangle,
   BookOpen,
   ChevronRight,
   ClipboardList,
@@ -31,6 +32,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ClaimsModule } from "./components/ClaimsModule";
 import { ClinicalDocsModule } from "./components/ClinicalDocsModule";
+import { DenialModule } from "./components/DenialModule";
 import { GenerateNotesModal } from "./components/GenerateNotesModal";
 import type { HealthPackage } from "./components/GenerateNotesModal";
 import { LocalDataSourceModule } from "./components/LocalDataSourceModule";
@@ -38,6 +40,7 @@ import { MastersModule } from "./components/MastersModule";
 import { PaymentModule } from "./components/PaymentModule";
 import { PreAuthModule } from "./components/PreAuthModule";
 import { RCMModule } from "./components/RCMModule";
+import { UserManual } from "./components/UserManual";
 
 export type { HealthPackage };
 
@@ -685,8 +688,11 @@ function MainApp() {
     | "payment"
     | "masters"
     | "datasource"
+    | "denial"
+    | "manual"
   >("home");
   const [prefill, setPrefill] = useState<Record<string, unknown>>({});
+  const [denialAlertCount, setDenialAlertCount] = useState(0);
 
   function handleNavigate(page: string, data?: Record<string, unknown>) {
     setActivePage(page as Parameters<typeof setActivePage>[0]);
@@ -916,6 +922,43 @@ function MainApp() {
               <span className="flex items-center gap-1">
                 <FolderOpen className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Data</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              data-ocid="nav.denial.link"
+              onClick={() => setActivePage("denial")}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors relative",
+                activePage === "denial"
+                  ? "bg-white/20 text-white"
+                  : "text-white/70 hover:text-white hover:bg-white/10",
+              )}
+            >
+              <span className="flex items-center gap-1">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Denial</span>
+                {denialAlertCount > 0 && (
+                  <span className="ml-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full px-1 py-0.5 leading-none">
+                    {denialAlertCount}
+                  </span>
+                )}
+              </span>
+            </button>
+            <button
+              type="button"
+              data-ocid="nav.manual.link"
+              onClick={() => setActivePage("manual")}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                activePage === "manual"
+                  ? "bg-white/20 text-white"
+                  : "text-white/70 hover:text-white hover:bg-white/10",
+              )}
+            >
+              <span className="flex items-center gap-1">
+                <BookOpen className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Help</span>
               </span>
             </button>
           </nav>
@@ -1330,6 +1373,14 @@ function MainApp() {
         {activePage === "datasource" && (
           <LocalDataSourceModule key="datasource" />
         )}
+        {activePage === "denial" && (
+          <DenialModule
+            key="denial"
+            onNavigate={handleNavigate}
+            onAlertCount={setDenialAlertCount}
+          />
+        )}
+        {activePage === "manual" && <UserManual key="manual" />}
       </AnimatePresence>
 
       <PageFooter />
