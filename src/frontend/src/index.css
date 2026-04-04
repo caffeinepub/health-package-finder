@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  src: url("/assets/fonts/PlusJakartaSans.woff2") format("woff2");
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --radius: 0.625rem;
+
+    /* Health Package Finder Design Tokens */
+    /* Primary blue #0E5E8D -> oklch(0.44 0.13 230) */
+    --hp-blue: 0.44 0.13 230;
+    /* Dark navy #0B2F45 -> oklch(0.28 0.09 232) */
+    --hp-navy: 0.28 0.09 232;
+    /* Page bg #E9EEF3 -> oklch(0.95 0.012 237) */
+    --hp-bg: 0.95 0.012 237;
+    /* Border #D6DEE6 -> oklch(0.89 0.018 237) */
+    --hp-border: 0.89 0.018 237;
+    /* Body text #1F2A33 -> oklch(0.24 0.03 232) */
+    --hp-body: 0.24 0.03 232;
+    /* Muted text #6B7C8A -> oklch(0.56 0.035 232) */
+    --hp-muted: 0.56 0.035 232;
+    /* Placeholder #9AA8B4 -> oklch(0.73 0.025 232) */
+    --hp-placeholder: 0.73 0.025 232;
+
+    /* Shadcn tokens mapped to our palette */
+    --background: 0.95 0.012 237;
+    --foreground: 0.24 0.03 232;
+    --card: 1 0 0;
+    --card-foreground: 0.24 0.03 232;
+    --popover: 1 0 0;
+    --popover-foreground: 0.24 0.03 232;
+    --primary: 0.44 0.13 230;
+    --primary-foreground: 1 0 0;
+    --secondary: 0.95 0.012 237;
+    --secondary-foreground: 0.44 0.13 230;
+    --muted: 0.95 0.012 237;
+    --muted-foreground: 0.56 0.035 232;
+    --accent: 0.92 0.02 237;
+    --accent-foreground: 0.44 0.13 230;
+    --destructive: 0.577 0.245 27.325;
+    --destructive-foreground: 0.985 0 0;
+    --border: 0.89 0.018 237;
+    --input: 0.89 0.018 237;
+    --ring: 0.44 0.13 230;
+    --chart-1: 0.646 0.222 41.116;
+    --chart-2: 0.6 0.118 184.704;
+    --chart-3: 0.398 0.07 227.392;
+    --chart-4: 0.828 0.189 84.429;
+    --chart-5: 0.769 0.188 70.08;
+    --sidebar: 0.28 0.09 232;
+    --sidebar-foreground: 0.95 0.012 237;
+    --sidebar-primary: 0.44 0.13 230;
+    --sidebar-primary-foreground: 1 0 0;
+    --sidebar-accent: 0.32 0.1 232;
+    --sidebar-accent-foreground: 0.95 0.012 237;
+    --sidebar-border: 0.35 0.08 232;
+    --sidebar-ring: 0.44 0.13 230;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
