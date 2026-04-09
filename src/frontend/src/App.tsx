@@ -11,6 +11,7 @@ import {
   BookOpen,
   ChevronRight,
   ClipboardList,
+  Clock,
   Database,
   ExternalLink,
   FileCheck,
@@ -19,17 +20,22 @@ import {
   Globe,
   Home,
   Info,
+  LayoutDashboard,
   Loader2,
   Package,
   Receipt,
   RefreshCw,
   Search,
+  Shield,
   Users,
   Wallet,
   X,
+  Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AgingARModule } from "./components/AgingARModule";
+import { ClaimValidationModule } from "./components/ClaimValidationModule";
 import { ClaimsModule } from "./components/ClaimsModule";
 import { ClinicalDocsModule } from "./components/ClinicalDocsModule";
 import { DenialModule } from "./components/DenialModule";
@@ -39,7 +45,9 @@ import { LocalDataSourceModule } from "./components/LocalDataSourceModule";
 import { MastersModule } from "./components/MastersModule";
 import { PaymentModule } from "./components/PaymentModule";
 import { PreAuthModule } from "./components/PreAuthModule";
+import { RCMDashboard } from "./components/RCMDashboard";
 import { RCMModule } from "./components/RCMModule";
+import { RCMWorkflowModule } from "./components/RCMWorkflowModule";
 import { UserManual } from "./components/UserManual";
 
 export type { HealthPackage };
@@ -681,10 +689,14 @@ function MainApp() {
     | "home"
     | "find"
     | "about"
+    | "dashboard"
     | "rcm"
+    | "rcm-workflow"
     | "preauth"
     | "clinicaldocs"
     | "claims"
+    | "claim-validation"
+    | "aging-ar"
     | "payment"
     | "masters"
     | "datasource"
@@ -814,6 +826,22 @@ function MainApp() {
             </button>
             <button
               type="button"
+              data-ocid="nav.dashboard.link"
+              onClick={() => setActivePage("dashboard")}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                activePage === "dashboard"
+                  ? "bg-white/20 text-white"
+                  : "text-white/70 hover:text-white hover:bg-white/10",
+              )}
+            >
+              <span className="flex items-center gap-1">
+                <LayoutDashboard className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Dashboard</span>
+              </span>
+            </button>
+            <button
+              type="button"
               data-ocid="nav.rcm.link"
               onClick={() => setActivePage("rcm")}
               className={cn(
@@ -826,6 +854,22 @@ function MainApp() {
               <span className="flex items-center gap-1">
                 <Users className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">RCM</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              data-ocid="nav.rcm-workflow.link"
+              onClick={() => setActivePage("rcm-workflow")}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                activePage === "rcm-workflow"
+                  ? "bg-white/20 text-white"
+                  : "text-white/70 hover:text-white hover:bg-white/10",
+              )}
+            >
+              <span className="flex items-center gap-1">
+                <Zap className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">RCM Workflow</span>
               </span>
             </button>
             <button
@@ -874,6 +918,38 @@ function MainApp() {
               <span className="flex items-center gap-1">
                 <Receipt className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Claims</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              data-ocid="nav.claim-validation.link"
+              onClick={() => setActivePage("claim-validation")}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                activePage === "claim-validation"
+                  ? "bg-white/20 text-white"
+                  : "text-white/70 hover:text-white hover:bg-white/10",
+              )}
+            >
+              <span className="flex items-center gap-1">
+                <Shield className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Validation</span>
+              </span>
+            </button>
+            <button
+              type="button"
+              data-ocid="nav.aging-ar.link"
+              onClick={() => setActivePage("aging-ar")}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                activePage === "aging-ar"
+                  ? "bg-white/20 text-white"
+                  : "text-white/70 hover:text-white hover:bg-white/10",
+              )}
+            >
+              <span className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Aging AR</span>
               </span>
             </button>
             <button
@@ -1339,8 +1415,23 @@ function MainApp() {
             </div>
           </motion.main>
         )}
+        {activePage === "dashboard" && (
+          <RCMDashboard key="dashboard" onNavigate={handleNavigate} />
+        )}
         {activePage === "rcm" && (
           <RCMModule key="rcm" onNavigate={handleNavigate} />
+        )}
+        {activePage === "rcm-workflow" && (
+          <motion.main
+            key="rcm-workflow"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
+            className="flex-1 flex flex-col bg-hp-bg"
+          >
+            <RCMWorkflowModule onNavigate={handleNavigate} />
+          </motion.main>
         )}
         {activePage === "preauth" && (
           <PreAuthModule
@@ -1360,6 +1451,27 @@ function MainApp() {
             prefill={prefill}
             onPrefillConsumed={handlePrefillConsumed}
           />
+        )}
+        {activePage === "claim-validation" && (
+          <motion.main
+            key="claim-validation"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
+            className="flex-1 bg-hp-bg"
+          >
+            <ClaimValidationModule
+              initialClaimId={prefill?.claimId as string | undefined}
+              onNavigate={(page, data) => {
+                handlePrefillConsumed();
+                handleNavigate(page, data);
+              }}
+            />
+          </motion.main>
+        )}
+        {activePage === "aging-ar" && (
+          <AgingARModule key="aging-ar" onNavigate={handleNavigate} />
         )}
         {activePage === "payment" && (
           <PaymentModule

@@ -1,12 +1,11 @@
-import HashMap "mo:base/HashMap";
-import Text "mo:base/Text";
-import Int "mo:base/Int";
-import Iter "mo:base/Iter";
-import Array "mo:base/Array";
-import Time "mo:base/Time";
-import Nat "mo:base/Nat";
-import Buffer "mo:base/Buffer";
-import Char "mo:base/Char";
+import Map "mo:core/Map";
+import Text "mo:core/Text";
+import Iter "mo:core/Iter";
+import Time "mo:core/Time";
+import Nat "mo:core/Nat";
+import List "mo:core/List";
+
+
 
 actor {
 
@@ -15,16 +14,7 @@ actor {
   // ─────────────────────────────────────────────
 
   private func toLower(t : Text) : Text {
-    var result = "";
-    for (c in t.chars()) {
-      let code = Char.toNat32(c);
-      if (code >= 65 and code <= 90) {
-        result #= Char.toText(Char.fromNat32(code + 32));
-      } else {
-        result #= Char.toText(c);
-      };
-    };
-    result;
+    t.toLower();
   };
 
   // ─────────────────────────────────────────────
@@ -76,14 +66,11 @@ actor {
   // Patient state
   // ─────────────────────────────────────────────
 
-  stable var apiKey : Text = "";
-  stable var patientEntries : [(Text, Patient)] = [];
-  stable var nextId : Nat = 1;
-  transient var patients : HashMap.HashMap<Text, Patient> =
-    HashMap.fromIter<Text, Patient>(patientEntries.vals(), 10, Text.equal, Text.hash);
+  let patients = Map.empty<Text, Patient>();
+  var nextId : Nat = 1;
 
   private func genId() : Text {
-    let id = "PAT-" # Nat.toText(nextId);
+    let id = "PAT-" # nextId.toText();
     nextId += 1;
     id;
   };
@@ -125,12 +112,12 @@ actor {
       createdAt = Time.now();
       createdBy = "system";
     };
-    patients.put(id, patient);
+    patients.add(id, patient);
     #ok(id);
   };
 
   public query func getPatients() : async [Patient] {
-    Iter.toArray(patients.vals());
+    patients.values().toArray();
   };
 
   public query func getPatientById(id : Text) : async ?Patient {
@@ -146,39 +133,24 @@ actor {
 
   public query func searchPatients(searchTerm : Text) : async [Patient] {
     let term = toLower(searchTerm);
-    let buf = Buffer.Buffer<Patient>(4);
+    let buf = List.empty<Patient>();
     for ((_, p) in patients.entries()) {
-      if (Text.contains(toLower(p.name), #text term) or Text.contains(toLower(p.abhaId), #text term)) {
+      if (toLower(p.name).contains(#text term) or toLower(p.abhaId).contains(#text term)) {
         buf.add(p);
       };
     };
-    Buffer.toArray(buf);
+    buf.toArray();
   };
 
   public shared func updateEligibility(id : Text, status : Text) : async Bool {
     switch (patients.get(id)) {
       case null { false };
       case (?p) {
-        let updated : Patient = {
-          id = p.id;
-          abhaId = p.abhaId;
-          name = p.name;
-          dob = p.dob;
-          gender = p.gender;
-          phone = p.phone;
-          address = p.address;
-          payerType = p.payerType;
-          payerName = p.payerName;
-          policyNumber = p.policyNumber;
-          policyStart = p.policyStart;
-          policyEnd = p.policyEnd;
+        let updated : Patient = { p with
           eligibilityStatus = status;
           eligibilityCheckedAt = Time.now();
-          documents = p.documents;
-          createdAt = p.createdAt;
-          createdBy = p.createdBy;
         };
-        patients.put(id, updated);
+        patients.add(id, updated);
         true;
       };
     };
@@ -189,31 +161,20 @@ actor {
       case null { false };
       case (?p) {
         let newDoc : DocumentRef = { documentId; docType };
-        let buf = Buffer.Buffer<DocumentRef>(p.documents.size() + 1);
-        for (d in p.documents.vals()) { buf.add(d); };
-        buf.add(newDoc);
-        let updated : Patient = {
-          id = p.id; abhaId = p.abhaId; name = p.name; dob = p.dob;
-          gender = p.gender; phone = p.phone; address = p.address;
-          payerType = p.payerType; payerName = p.payerName;
-          policyNumber = p.policyNumber; policyStart = p.policyStart;
-          policyEnd = p.policyEnd; eligibilityStatus = p.eligibilityStatus;
-          eligibilityCheckedAt = p.eligibilityCheckedAt;
-          documents = Buffer.toArray(buf);
-          createdAt = p.createdAt; createdBy = p.createdBy;
-        };
-        patients.put(patientId, updated);
+        let newDocs = p.documents.concat([newDoc]);
+        let updated : Patient = { p with documents = newDocs };
+        patients.add(patientId, updated);
         true;
       };
     };
   };
 
   public query func getPatientsByStatus(status : Text) : async [Patient] {
-    let buf = Buffer.Buffer<Patient>(4);
+    let buf = List.empty<Patient>();
     for ((_, p) in patients.entries()) {
       if (p.eligibilityStatus == status) { buf.add(p); };
     };
-    Buffer.toArray(buf);
+    buf.toArray();
   };
 
   // ─────────────────────────────────────────────
@@ -270,13 +231,11 @@ actor {
   // Pre-Auth state
   // ─────────────────────────────────────────────
 
-  stable var preAuthEntries : [(Text, PreAuthRecord)] = [];
-  stable var nextPreAuthId : Nat = 1;
-  transient var preAuths : HashMap.HashMap<Text, PreAuthRecord> =
-    HashMap.fromIter<Text, PreAuthRecord>(preAuthEntries.vals(), 10, Text.equal, Text.hash);
+  let preAuths = Map.empty<Text, PreAuthRecord>();
+  var nextPreAuthId : Nat = 1;
 
   private func genPreAuthId() : Text {
-    let id = "PREAUTH-" # Nat.toText(nextPreAuthId);
+    let id = "PREAUTH-" # nextPreAuthId.toText();
     nextPreAuthId += 1;
     id;
   };
@@ -306,12 +265,12 @@ actor {
       queries = [];
       documentChecklist = req.documentChecklist;
     };
-    preAuths.put(id, record);
+    preAuths.add(id, record);
     #ok(id);
   };
 
   public query func getPreAuths() : async [PreAuthRecord] {
-    Iter.toArray(preAuths.vals());
+    preAuths.values().toArray();
   };
 
   public query func getPreAuthById(id : Text) : async ?PreAuthRecord {
@@ -319,27 +278,23 @@ actor {
   };
 
   public query func getPreAuthsByPatient(patientId : Text) : async [PreAuthRecord] {
-    let buf = Buffer.Buffer<PreAuthRecord>(4);
+    let buf = List.empty<PreAuthRecord>();
     for ((_, r) in preAuths.entries()) {
       if (r.patientId == patientId) { buf.add(r); };
     };
-    Buffer.toArray(buf);
+    buf.toArray();
   };
 
   public shared func updatePreAuthStatus(id : Text, status : Text, remarks : Text) : async Bool {
     switch (preAuths.get(id)) {
       case null { false };
       case (?r) {
-        let updated : PreAuthRecord = {
-          id = r.id; patientId = r.patientId; patientName = r.patientName;
-          packageCode = r.packageCode; packageName = r.packageName;
-          diagnosisName = r.diagnosisName; schemeType = r.schemeType;
-          payerName = r.payerName; requestedAmount = r.requestedAmount;
-          status; updatedAt = Time.now(); submittedAt = r.submittedAt;
-          expectedTATHours = r.expectedTATHours; remarks;
-          queries = r.queries; documentChecklist = r.documentChecklist;
+        let updated : PreAuthRecord = { r with
+          status;
+          remarks;
+          updatedAt = Time.now();
         };
-        preAuths.put(id, updated);
+        preAuths.add(id, updated);
         true;
       };
     };
@@ -350,31 +305,25 @@ actor {
       case null { false };
       case (?r) {
         let newMsg : QueryMessage = { message; fromTPA; timestamp = Time.now() };
-        let buf = Buffer.Buffer<QueryMessage>(r.queries.size() + 1);
-        for (q in r.queries.vals()) { buf.add(q); };
-        buf.add(newMsg);
+        let newQueries = r.queries.concat([newMsg]);
         let newStatus = if (fromTPA and r.status == "Submitted") "QueryRaised" else r.status;
-        let updated : PreAuthRecord = {
-          id = r.id; patientId = r.patientId; patientName = r.patientName;
-          packageCode = r.packageCode; packageName = r.packageName;
-          diagnosisName = r.diagnosisName; schemeType = r.schemeType;
-          payerName = r.payerName; requestedAmount = r.requestedAmount;
-          status = newStatus; updatedAt = Time.now(); submittedAt = r.submittedAt;
-          expectedTATHours = r.expectedTATHours; remarks = r.remarks;
-          queries = Buffer.toArray(buf); documentChecklist = r.documentChecklist;
+        let updated : PreAuthRecord = { r with
+          status = newStatus;
+          updatedAt = Time.now();
+          queries = newQueries;
         };
-        preAuths.put(id, updated);
+        preAuths.add(id, updated);
         true;
       };
     };
   };
 
   public query func getPreAuthsByStatus(status : Text) : async [PreAuthRecord] {
-    let buf = Buffer.Buffer<PreAuthRecord>(4);
+    let buf = List.empty<PreAuthRecord>();
     for ((_, r) in preAuths.entries()) {
       if (r.status == status) { buf.add(r); };
     };
-    Buffer.toArray(buf);
+    buf.toArray();
   };
 
   // ─────────────────────────────────────────────
@@ -419,13 +368,11 @@ actor {
   // Clinical Documentation state
   // ─────────────────────────────────────────────
 
-  stable var clinicalDocEntries : [(Text, ClinicalDocRecord)] = [];
-  stable var nextClinicalDocId : Nat = 1;
-  transient var clinicalDocs : HashMap.HashMap<Text, ClinicalDocRecord> =
-    HashMap.fromIter<Text, ClinicalDocRecord>(clinicalDocEntries.vals(), 10, Text.equal, Text.hash);
+  let clinicalDocs = Map.empty<Text, ClinicalDocRecord>();
+  var nextClinicalDocId : Nat = 1;
 
   private func genClinicalDocId() : Text {
-    let id = "CDOC-" # Nat.toText(nextClinicalDocId);
+    let id = "CDOC-" # nextClinicalDocId.toText();
     nextClinicalDocId += 1;
     id;
   };
@@ -450,12 +397,12 @@ actor {
       createdAt = now;
       updatedAt = now;
     };
-    clinicalDocs.put(id, record);
+    clinicalDocs.add(id, record);
     #ok(id);
   };
 
   public query func getClinicalDocs() : async [ClinicalDocRecord] {
-    Iter.toArray(clinicalDocs.vals());
+    clinicalDocs.values().toArray();
   };
 
   public query func getClinicalDocById(id : Text) : async ?ClinicalDocRecord {
@@ -463,11 +410,11 @@ actor {
   };
 
   public query func getClinicalDocsByPatient(patientId : Text) : async [ClinicalDocRecord] {
-    let buf = Buffer.Buffer<ClinicalDocRecord>(4);
+    let buf = List.empty<ClinicalDocRecord>();
     for ((_, r) in clinicalDocs.entries()) {
       if (r.patientId == patientId) { buf.add(r); };
     };
-    Buffer.toArray(buf);
+    buf.toArray();
   };
 
   public shared func updateClinicalDoc(
@@ -480,36 +427,36 @@ actor {
     switch (clinicalDocs.get(id)) {
       case null { false };
       case (?r) {
-        let updated : ClinicalDocRecord = {
-          id = r.id;
-          patientId = r.patientId;
-          patientName = r.patientName;
-          packageCodes = r.packageCodes;
-          packageNames = r.packageNames;
+        let updated : ClinicalDocRecord = { r with
           doctorNotes;
           dischargeSummary;
           documentChecklist;
           status;
-          createdAt = r.createdAt;
           updatedAt = Time.now();
         };
-        clinicalDocs.put(id, updated);
+        clinicalDocs.add(id, updated);
         true;
       };
     };
   };
 
   public query func getClinicalDocsByStatus(status : Text) : async [ClinicalDocRecord] {
-    let buf = Buffer.Buffer<ClinicalDocRecord>(4);
+    let buf = List.empty<ClinicalDocRecord>();
     for ((_, r) in clinicalDocs.entries()) {
       if (r.status == status) { buf.add(r); };
     };
-    Buffer.toArray(buf);
+    buf.toArray();
   };
 
   // ─────────────────────────────────────────────
   // Claims types
   // ─────────────────────────────────────────────
+
+  public type ClaimTimelineEvent = {
+    stage : Text;
+    timestamp : Int;
+    notes : Text;
+  };
 
   public type ClaimRecord = {
     id : Text;
@@ -532,6 +479,7 @@ actor {
     rejectionRemarks : Text;
     settlementDate : Text;
     documentChecklist : [DocChecklistItem];
+    timelineEvents : [ClaimTimelineEvent];
     createdAt : Int;
     updatedAt : Int;
   };
@@ -561,13 +509,11 @@ actor {
   // Claims state
   // ─────────────────────────────────────────────
 
-  stable var claimEntries : [(Text, ClaimRecord)] = [];
-  stable var nextClaimId : Nat = 1;
-  transient var claims : HashMap.HashMap<Text, ClaimRecord> =
-    HashMap.fromIter<Text, ClaimRecord>(claimEntries.vals(), 10, Text.equal, Text.hash);
+  let claims = Map.empty<Text, ClaimRecord>();
+  var nextClaimId : Nat = 1;
 
   private func genClaimId() : Text {
-    let id = "CLM-" # Nat.toText(nextClaimId);
+    let id = "CLM-" # nextClaimId.toText();
     nextClaimId += 1;
     id;
   };
@@ -579,6 +525,7 @@ actor {
   public shared func createClaim(req : ClaimRequest) : async ClaimResult {
     let id = genClaimId();
     let now = Time.now();
+    let initEvent : ClaimTimelineEvent = { stage = "Submitted"; timestamp = now; notes = "Claim submitted" };
     let record : ClaimRecord = {
       id;
       patientId = req.patientId;
@@ -600,15 +547,16 @@ actor {
       rejectionRemarks = "";
       settlementDate = "";
       documentChecklist = req.documentChecklist;
+      timelineEvents = [initEvent];
       createdAt = now;
       updatedAt = now;
     };
-    claims.put(id, record);
+    claims.add(id, record);
     #ok(id);
   };
 
   public query func getClaims() : async [ClaimRecord] {
-    Iter.toArray(claims.vals());
+    claims.values().toArray();
   };
 
   public query func getClaimById(id : Text) : async ?ClaimRecord {
@@ -616,58 +564,52 @@ actor {
   };
 
   public query func getClaimsByPatient(patientId : Text) : async [ClaimRecord] {
-    let buf = Buffer.Buffer<ClaimRecord>(4);
+    let buf = List.empty<ClaimRecord>();
     for ((_, r) in claims.entries()) {
       if (r.patientId == patientId) { buf.add(r); };
     };
-    Buffer.toArray(buf);
+    buf.toArray();
   };
 
   public query func getClaimsByPreAuth(preAuthId : Text) : async [ClaimRecord] {
-    let buf = Buffer.Buffer<ClaimRecord>(4);
+    let buf = List.empty<ClaimRecord>();
     for ((_, r) in claims.entries()) {
       if (r.preAuthId == preAuthId) { buf.add(r); };
     };
-    Buffer.toArray(buf);
+    buf.toArray();
   };
 
   public shared func updateClaimStatus(id : Text, status : Text, remarks : Text) : async Bool {
     switch (claims.get(id)) {
       case null { false };
       case (?r) {
+        let now = Time.now();
         let settlementDate = if (status == "Settled") {
-          Int.toText(Time.now());
+          now.toText();
         } else {
           r.settlementDate;
         };
-        let updated : ClaimRecord = {
-          id = r.id; patientId = r.patientId; patientName = r.patientName;
-          preAuthId = r.preAuthId; packageCode = r.packageCode;
-          packageName = r.packageName; diagnosisName = r.diagnosisName;
-          schemeType = r.schemeType; payerName = r.payerName;
-          admissionDate = r.admissionDate; dischargeDate = r.dischargeDate;
-          billedAmount = r.billedAmount; approvedAmount = r.approvedAmount;
-          icdCode = r.icdCode; procedureDetails = r.procedureDetails;
-          claimType = r.claimType;
+        let timelineEvent : ClaimTimelineEvent = { stage = status; timestamp = now; notes = remarks };
+        let newTimeline = r.timelineEvents.concat([timelineEvent]);
+        let updated : ClaimRecord = { r with
           status;
           rejectionRemarks = if (status == "Rejected") remarks else r.rejectionRemarks;
           settlementDate;
-          documentChecklist = r.documentChecklist;
-          createdAt = r.createdAt;
-          updatedAt = Time.now();
+          timelineEvents = newTimeline;
+          updatedAt = now;
         };
-        claims.put(id, updated);
+        claims.add(id, updated);
         true;
       };
     };
   };
 
   public query func getClaimsByStatus(status : Text) : async [ClaimRecord] {
-    let buf = Buffer.Buffer<ClaimRecord>(4);
+    let buf = List.empty<ClaimRecord>();
     for ((_, r) in claims.entries()) {
       if (r.status == status) { buf.add(r); };
     };
-    Buffer.toArray(buf);
+    buf.toArray();
   };
 
   // ─────────────────────────────────────────────
@@ -713,13 +655,11 @@ actor {
   // Payment & Settlement state
   // ─────────────────────────────────────────────
 
-  stable var paymentEntries : [(Text, PaymentRecord)] = [];
-  stable var nextPaymentId : Nat = 1;
-  transient var payments : HashMap.HashMap<Text, PaymentRecord> =
-    HashMap.fromIter<Text, PaymentRecord>(paymentEntries.vals(), 10, Text.equal, Text.hash);
+  let payments = Map.empty<Text, PaymentRecord>();
+  var nextPaymentId : Nat = 1;
 
   private func genPaymentId() : Text {
-    let id = "PAY-" # Nat.toText(nextPaymentId);
+    let id = "PAY-" # nextPaymentId.toText();
     nextPaymentId += 1;
     id;
   };
@@ -756,12 +696,12 @@ actor {
       createdAt = now;
       updatedAt = now;
     };
-    payments.put(id, record);
+    payments.add(id, record);
     #ok(id);
   };
 
   public query func getPayments() : async [PaymentRecord] {
-    Iter.toArray(payments.vals());
+    payments.values().toArray();
   };
 
   public query func getPaymentById(id : Text) : async ?PaymentRecord {
@@ -769,27 +709,27 @@ actor {
   };
 
   public query func getPaymentsByPatient(patientId : Text) : async [PaymentRecord] {
-    let buf = Buffer.Buffer<PaymentRecord>(4);
+    let buf = List.empty<PaymentRecord>();
     for ((_, r) in payments.entries()) {
       if (r.patientId == patientId) { buf.add(r); };
     };
-    Buffer.toArray(buf);
+    buf.toArray();
   };
 
   public query func getPaymentsByClaimId(claimId : Text) : async [PaymentRecord] {
-    let buf = Buffer.Buffer<PaymentRecord>(4);
+    let buf = List.empty<PaymentRecord>();
     for ((_, r) in payments.entries()) {
       if (r.claimId == claimId) { buf.add(r); };
     };
-    Buffer.toArray(buf);
+    buf.toArray();
   };
 
   public query func getPaymentsByStatus(status : Text) : async [PaymentRecord] {
-    let buf = Buffer.Buffer<PaymentRecord>(4);
+    let buf = List.empty<PaymentRecord>();
     for ((_, r) in payments.entries()) {
       if (r.settlementStatus == status) { buf.add(r); };
     };
-    Buffer.toArray(buf);
+    buf.toArray();
   };
 
   public shared func updatePaymentStatus(
@@ -803,25 +743,15 @@ actor {
       case null { false };
       case (?r) {
         let now = Time.now();
-        let updated : PaymentRecord = {
-          id = r.id;
-          claimId = r.claimId;
-          patientId = r.patientId;
-          patientName = r.patientName;
-          payerName = r.payerName;
-          billedAmount = r.billedAmount;
-          approvedAmount = r.approvedAmount;
+        let updated : PaymentRecord = { r with
           paidAmount;
-          paymentMode = r.paymentMode;
           transactionRef;
-          paymentDate = r.paymentDate;
           settlementStatus;
           discrepancyRemarks;
           reconciledAt = if (settlementStatus == "Paid") now else r.reconciledAt;
-          createdAt = r.createdAt;
           updatedAt = now;
         };
-        payments.put(id, updated);
+        payments.add(id, updated);
         true;
       };
     };
@@ -864,10 +794,8 @@ actor {
     isActive : Bool;
   };
 
-  stable var hospitalEntries : [(Text, HospitalMaster)] = [];
-  stable var nextHospitalId : Nat = 1;
-  transient var hospitals : HashMap.HashMap<Text, HospitalMaster> =
-    HashMap.fromIter<Text, HospitalMaster>(hospitalEntries.vals(), 10, Text.equal, Text.hash);
+  let hospitals = Map.empty<Text, HospitalMaster>();
+  var nextHospitalId : Nat = 1;
 
   public shared func createHospital(req : HospitalMasterRequest) : async MasterResult {
     for ((_, h) in hospitals.entries()) {
@@ -875,10 +803,10 @@ actor {
         return #err("Hospital with this code already exists: " # h.id);
       };
     };
-    let id = "HOSP-" # Nat.toText(nextHospitalId);
+    let id = "HOSP-" # nextHospitalId.toText();
     nextHospitalId += 1;
     let now = Time.now();
-    hospitals.put(id, {
+    hospitals.add(id, {
       id; name = req.name; code = req.code; address = req.address;
       nabhNumber = req.nabhNumber; rohiniId = req.rohiniId;
       contactPerson = req.contactPerson; phone = req.phone;
@@ -889,14 +817,14 @@ actor {
   };
 
   public query func getHospitals() : async [HospitalMaster] {
-    Iter.toArray(hospitals.vals());
+    hospitals.values().toArray();
   };
 
   public shared func updateHospital(id : Text, req : HospitalMasterRequest) : async Bool {
     switch (hospitals.get(id)) {
       case null { false };
       case (?h) {
-        hospitals.put(id, {
+        hospitals.add(id, {
           id; name = req.name; code = req.code; address = req.address;
           nabhNumber = req.nabhNumber; rohiniId = req.rohiniId;
           contactPerson = req.contactPerson; phone = req.phone;
@@ -911,7 +839,7 @@ actor {
   public shared func deleteHospital(id : Text) : async Bool {
     switch (hospitals.get(id)) {
       case null { false };
-      case (_) { hospitals.delete(id); true };
+      case (_) { hospitals.remove(id); true };
     };
   };
 
@@ -942,10 +870,8 @@ actor {
     isActive : Bool;
   };
 
-  stable var doctorEntries : [(Text, DoctorMaster)] = [];
-  stable var nextDoctorId : Nat = 1;
-  transient var doctors : HashMap.HashMap<Text, DoctorMaster> =
-    HashMap.fromIter<Text, DoctorMaster>(doctorEntries.vals(), 10, Text.equal, Text.hash);
+  let doctors = Map.empty<Text, DoctorMaster>();
+  var nextDoctorId : Nat = 1;
 
   public shared func createDoctor(req : DoctorMasterRequest) : async MasterResult {
     if (req.registrationNumber != "") {
@@ -955,10 +881,10 @@ actor {
         };
       };
     };
-    let id = "DOC-" # Nat.toText(nextDoctorId);
+    let id = "DOC-" # nextDoctorId.toText();
     nextDoctorId += 1;
     let now = Time.now();
-    doctors.put(id, {
+    doctors.add(id, {
       id; name = req.name; registrationNumber = req.registrationNumber;
       specialisation = req.specialisation; department = req.department;
       phone = req.phone; email = req.email; isActive = req.isActive;
@@ -968,14 +894,14 @@ actor {
   };
 
   public query func getDoctors() : async [DoctorMaster] {
-    Iter.toArray(doctors.vals());
+    doctors.values().toArray();
   };
 
   public shared func updateDoctor(id : Text, req : DoctorMasterRequest) : async Bool {
     switch (doctors.get(id)) {
       case null { false };
       case (?d) {
-        doctors.put(id, {
+        doctors.add(id, {
           id; name = req.name; registrationNumber = req.registrationNumber;
           specialisation = req.specialisation; department = req.department;
           phone = req.phone; email = req.email; isActive = req.isActive;
@@ -989,7 +915,7 @@ actor {
   public shared func deleteDoctor(id : Text) : async Bool {
     switch (doctors.get(id)) {
       case null { false };
-      case (_) { doctors.delete(id); true };
+      case (_) { doctors.remove(id); true };
     };
   };
 
@@ -1020,10 +946,8 @@ actor {
     isActive : Bool;
   };
 
-  stable var tpaEntries : [(Text, TpaMaster)] = [];
-  stable var nextTpaId : Nat = 1;
-  transient var tpas : HashMap.HashMap<Text, TpaMaster> =
-    HashMap.fromIter<Text, TpaMaster>(tpaEntries.vals(), 10, Text.equal, Text.hash);
+  let tpas = Map.empty<Text, TpaMaster>();
+  var nextTpaId : Nat = 1;
 
   public shared func createTpa(req : TpaMasterRequest) : async MasterResult {
     for ((_, t) in tpas.entries()) {
@@ -1031,10 +955,10 @@ actor {
         return #err("TPA with this code already exists: " # t.id);
       };
     };
-    let id = "TPA-" # Nat.toText(nextTpaId);
+    let id = "TPA-" # nextTpaId.toText();
     nextTpaId += 1;
     let now = Time.now();
-    tpas.put(id, {
+    tpas.add(id, {
       id; name = req.name; code = req.code; tpaType = req.tpaType;
       contactPerson = req.contactPerson; phone = req.phone;
       email = req.email; isActive = req.isActive;
@@ -1044,14 +968,14 @@ actor {
   };
 
   public query func getTpas() : async [TpaMaster] {
-    Iter.toArray(tpas.vals());
+    tpas.values().toArray();
   };
 
   public shared func updateTpa(id : Text, req : TpaMasterRequest) : async Bool {
     switch (tpas.get(id)) {
       case null { false };
       case (?t) {
-        tpas.put(id, {
+        tpas.add(id, {
           id; name = req.name; code = req.code; tpaType = req.tpaType;
           contactPerson = req.contactPerson; phone = req.phone;
           email = req.email; isActive = req.isActive;
@@ -1065,7 +989,7 @@ actor {
   public shared func deleteTpa(id : Text) : async Bool {
     switch (tpas.get(id)) {
       case null { false };
-      case (_) { tpas.delete(id); true };
+      case (_) { tpas.remove(id); true };
     };
   };
 
@@ -1090,10 +1014,8 @@ actor {
     isActive : Bool;
   };
 
-  stable var icdEntries : [(Text, IcdMaster)] = [];
-  stable var nextIcdId : Nat = 1;
-  transient var icds : HashMap.HashMap<Text, IcdMaster> =
-    HashMap.fromIter<Text, IcdMaster>(icdEntries.vals(), 10, Text.equal, Text.hash);
+  let icds = Map.empty<Text, IcdMaster>();
+  var nextIcdId : Nat = 1;
 
   public shared func createIcd(req : IcdMasterRequest) : async MasterResult {
     for ((_, i) in icds.entries()) {
@@ -1101,10 +1023,10 @@ actor {
         return #err("ICD code already exists: " # i.id);
       };
     };
-    let id = "ICD-" # Nat.toText(nextIcdId);
+    let id = "ICD-" # nextIcdId.toText();
     nextIcdId += 1;
     let now = Time.now();
-    icds.put(id, {
+    icds.add(id, {
       id; code = req.code; description = req.description;
       category = req.category; isActive = req.isActive;
       createdAt = now; updatedAt = now
@@ -1113,14 +1035,14 @@ actor {
   };
 
   public query func getIcds() : async [IcdMaster] {
-    Iter.toArray(icds.vals());
+    icds.values().toArray();
   };
 
   public shared func updateIcd(id : Text, req : IcdMasterRequest) : async Bool {
     switch (icds.get(id)) {
       case null { false };
       case (?i) {
-        icds.put(id, {
+        icds.add(id, {
           id; code = req.code; description = req.description;
           category = req.category; isActive = req.isActive;
           createdAt = i.createdAt; updatedAt = Time.now()
@@ -1133,7 +1055,7 @@ actor {
   public shared func deleteIcd(id : Text) : async Bool {
     switch (icds.get(id)) {
       case null { false };
-      case (_) { icds.delete(id); true };
+      case (_) { icds.remove(id); true };
     };
   };
 
@@ -1160,16 +1082,14 @@ actor {
     isActive : Bool;
   };
 
-  stable var wardEntries : [(Text, WardMaster)] = [];
-  stable var nextWardId : Nat = 1;
-  transient var wards : HashMap.HashMap<Text, WardMaster> =
-    HashMap.fromIter<Text, WardMaster>(wardEntries.vals(), 10, Text.equal, Text.hash);
+  let wards = Map.empty<Text, WardMaster>();
+  var nextWardId : Nat = 1;
 
   public shared func createWard(req : WardMasterRequest) : async MasterResult {
-    let id = "WARD-" # Nat.toText(nextWardId);
+    let id = "WARD-" # nextWardId.toText();
     nextWardId += 1;
     let now = Time.now();
-    wards.put(id, {
+    wards.add(id, {
       id; name = req.name; wardType = req.wardType;
       ratePerDay = req.ratePerDay; totalBeds = req.totalBeds;
       isActive = req.isActive; createdAt = now; updatedAt = now
@@ -1178,14 +1098,14 @@ actor {
   };
 
   public query func getWards() : async [WardMaster] {
-    Iter.toArray(wards.vals());
+    wards.values().toArray();
   };
 
   public shared func updateWard(id : Text, req : WardMasterRequest) : async Bool {
     switch (wards.get(id)) {
       case null { false };
       case (?w) {
-        wards.put(id, {
+        wards.add(id, {
           id; name = req.name; wardType = req.wardType;
           ratePerDay = req.ratePerDay; totalBeds = req.totalBeds;
           isActive = req.isActive; createdAt = w.createdAt; updatedAt = Time.now()
@@ -1198,7 +1118,7 @@ actor {
   public shared func deleteWard(id : Text) : async Bool {
     switch (wards.get(id)) {
       case null { false };
-      case (_) { wards.delete(id); true };
+      case (_) { wards.remove(id); true };
     };
   };
 
@@ -1241,13 +1161,11 @@ actor {
 
   public type DenialResult = { #ok : Text; #err : Text };
 
-  stable var denialEntries : [(Text, DenialRecord)] = [];
-  stable var nextDenialId : Nat = 1;
-  transient var denials : HashMap.HashMap<Text, DenialRecord> =
-    HashMap.fromIter<Text, DenialRecord>(denialEntries.vals(), 10, Text.equal, Text.hash);
+  let denials = Map.empty<Text, DenialRecord>();
+  var nextDenialId : Nat = 1;
 
   private func genDenialId() : Text {
-    let id = "DNL-" # Nat.toText(nextDenialId);
+    let id = "DNL-" # nextDenialId.toText();
     nextDenialId += 1;
     id;
   };
@@ -1260,7 +1178,7 @@ actor {
     };
     let id = genDenialId();
     let now = Time.now();
-    denials.put(id, {
+    denials.add(id, {
       id; claimId = req.claimId; patientId = req.patientId;
       patientName = req.patientName; payerName = req.payerName;
       schemeType = req.schemeType; packageCode = req.packageCode;
@@ -1273,7 +1191,7 @@ actor {
   };
 
   public query func getDenials() : async [DenialRecord] {
-    Iter.toArray(denials.vals());
+    denials.values().toArray();
   };
 
   public query func getDenialById(id : Text) : async ?DenialRecord {
@@ -1281,17 +1199,19 @@ actor {
   };
 
   public query func getDenialsByClaimId(claimId : Text) : async [DenialRecord] {
-    Array.filter<DenialRecord>(
-      Iter.toArray(denials.vals()),
-      func(d) { d.claimId == claimId }
-    );
+    let buf = List.empty<DenialRecord>();
+    for ((_, d) in denials.entries()) {
+      if (d.claimId == claimId) { buf.add(d); };
+    };
+    buf.toArray();
   };
 
   public query func getDenialsByStatus(status : Text) : async [DenialRecord] {
-    Array.filter<DenialRecord>(
-      Iter.toArray(denials.vals()),
-      func(d) { toLower(d.status) == toLower(status) }
-    );
+    let buf = List.empty<DenialRecord>();
+    for ((_, d) in denials.entries()) {
+      if (toLower(d.status) == toLower(status)) { buf.add(d); };
+    };
+    buf.toArray();
   };
 
   public shared func updateDenialStatus(
@@ -1304,17 +1224,13 @@ actor {
       case null { false };
       case (?d) {
         let now = Time.now();
-        denials.put(id, {
-          id = d.id; claimId = d.claimId; patientId = d.patientId;
-          patientName = d.patientName; payerName = d.payerName;
-          schemeType = d.schemeType; packageCode = d.packageCode;
-          packageName = d.packageName; rejectionRemarks = d.rejectionRemarks;
-          rejectionCategory = d.rejectionCategory;
+        denials.add(id, { d with
           rootCauseNotes = if (rootCauseNotes == "") d.rootCauseNotes else rootCauseNotes;
           alertSent = true;
           resubmittedAt = if (resubmitted) now else d.resubmittedAt;
           resolvedAt = if (status == "Resolved" or status == "WrittenOff") now else d.resolvedAt;
-          status; createdAt = d.createdAt; updatedAt = now
+          status;
+          updatedAt = now;
         });
         true;
       };
@@ -1322,45 +1238,229 @@ actor {
   };
 
   // ─────────────────────────────────────────────
-  // Upgrade hooks
+  // Appeal Management
   // ─────────────────────────────────────────────
 
-  system func preupgrade() {
-    patientEntries := Iter.toArray(patients.entries());
-    preAuthEntries := Iter.toArray(preAuths.entries());
-    clinicalDocEntries := Iter.toArray(clinicalDocs.entries());
-    claimEntries := Iter.toArray(claims.entries());
-    paymentEntries := Iter.toArray(payments.entries());
-    hospitalEntries := Iter.toArray(hospitals.entries());
-    doctorEntries := Iter.toArray(doctors.entries());
-    tpaEntries := Iter.toArray(tpas.entries());
-    icdEntries := Iter.toArray(icds.entries());
-    wardEntries := Iter.toArray(wards.entries());
-    denialEntries := Iter.toArray(denials.entries());
+  public type Appeal = {
+    id : Text;
+    denialId : Text;
+    patientId : Text;
+    claimId : Text;
+    status : Text;
+    appealReason : Text;
+    submittedAt : ?Int;
+    resolvedAt : ?Int;
+    notes : Text;
+    createdAt : Int;
   };
 
-  system func postupgrade() {
-    patients := HashMap.fromIter<Text, Patient>(patientEntries.vals(), 10, Text.equal, Text.hash);
-    patientEntries := [];
-    preAuths := HashMap.fromIter<Text, PreAuthRecord>(preAuthEntries.vals(), 10, Text.equal, Text.hash);
-    preAuthEntries := [];
-    clinicalDocs := HashMap.fromIter<Text, ClinicalDocRecord>(clinicalDocEntries.vals(), 10, Text.equal, Text.hash);
-    clinicalDocEntries := [];
-    claims := HashMap.fromIter<Text, ClaimRecord>(claimEntries.vals(), 10, Text.equal, Text.hash);
-    claimEntries := [];
-    payments := HashMap.fromIter<Text, PaymentRecord>(paymentEntries.vals(), 10, Text.equal, Text.hash);
-    paymentEntries := [];
-    hospitals := HashMap.fromIter<Text, HospitalMaster>(hospitalEntries.vals(), 10, Text.equal, Text.hash);
-    hospitalEntries := [];
-    doctors := HashMap.fromIter<Text, DoctorMaster>(doctorEntries.vals(), 10, Text.equal, Text.hash);
-    doctorEntries := [];
-    tpas := HashMap.fromIter<Text, TpaMaster>(tpaEntries.vals(), 10, Text.equal, Text.hash);
-    tpaEntries := [];
-    icds := HashMap.fromIter<Text, IcdMaster>(icdEntries.vals(), 10, Text.equal, Text.hash);
-    icdEntries := [];
-    wards := HashMap.fromIter<Text, WardMaster>(wardEntries.vals(), 10, Text.equal, Text.hash);
-    wardEntries := [];
-    denials := HashMap.fromIter<Text, DenialRecord>(denialEntries.vals(), 10, Text.equal, Text.hash);
-    denialEntries := [];
+  public type AppealInput = {
+    denialId : Text;
+    patientId : Text;
+    claimId : Text;
+    status : Text;
+    appealReason : Text;
+    notes : Text;
+  };
+
+  public type AppealResult = { #ok : Appeal; #err : Text };
+
+  let appeals = Map.empty<Text, Appeal>();
+  var nextAppealId : Nat = 1;
+
+  private func genAppealId() : Text {
+    let id = "APL-" # nextAppealId.toText();
+    nextAppealId += 1;
+    id;
+  };
+
+  public shared func createAppeal(input : AppealInput) : async AppealResult {
+    let id = genAppealId();
+    let now = Time.now();
+    let appeal : Appeal = {
+      id;
+      denialId = input.denialId;
+      patientId = input.patientId;
+      claimId = input.claimId;
+      status = input.status;
+      appealReason = input.appealReason;
+      submittedAt = if (input.status == "Submitted") ?now else null;
+      resolvedAt = null;
+      notes = input.notes;
+      createdAt = now;
+    };
+    appeals.add(id, appeal);
+    #ok(appeal);
+  };
+
+  public query func getAppeals() : async [Appeal] {
+    appeals.values().toArray();
+  };
+
+  public query func getAppealById(id : Text) : async ?Appeal {
+    appeals.get(id);
+  };
+
+  public query func getAppealsByDenialId(denialId : Text) : async [Appeal] {
+    let buf = List.empty<Appeal>();
+    for ((_, a) in appeals.entries()) {
+      if (a.denialId == denialId) { buf.add(a); };
+    };
+    buf.toArray();
+  };
+
+  public shared func updateAppealStatus(id : Text, status : Text, notes : Text) : async AppealResult {
+    switch (appeals.get(id)) {
+      case null { #err("Appeal not found: " # id) };
+      case (?a) {
+        let now = Time.now();
+        let updated : Appeal = { a with
+          status;
+          notes = if (notes == "") a.notes else notes;
+          submittedAt = if (status == "Submitted" and a.submittedAt == null) ?now else a.submittedAt;
+          resolvedAt = if (status == "Approved" or status == "Rejected") ?now else a.resolvedAt;
+        };
+        appeals.add(id, updated);
+        #ok(updated);
+      };
+    };
+  };
+
+  // ─────────────────────────────────────────────
+  // RCM Analytics
+  // ─────────────────────────────────────────────
+
+  public type RCMStats = {
+    totalAR : Float;
+    approvalRate : Float;
+    denialRate : Float;
+    avgResolutionDays : Float;
+    pendingPreAuths : Nat;
+    claimsByStatus : [(Text, Nat)];
+    totalClaimsValue : Float;
+    totalPaidValue : Float;
+  };
+
+  public type AgingAR = {
+    bucket0to30 : [ClaimRecord];
+    bucket31to60 : [ClaimRecord];
+    bucket61to90 : [ClaimRecord];
+    bucket91plus : [ClaimRecord];
+    totalOutstanding : Float;
+  };
+
+  // Parse a currency text like "50000" or "75000.50" into Float
+  private func parseFloat(t : Text) : Float {
+    if (t == "" or t == "0") { return 0.0; };
+    // Split on decimal point
+    let parts = t.split(#char '.');
+    let arr = parts.toArray();
+    if (arr.size() == 0) { return 0.0; };
+    let wholePart = switch (Nat.fromText(arr[0])) {
+      case (?n) n.toFloat();
+      case null 0.0;
+    };
+    if (arr.size() == 1) { return wholePart; };
+    let fracText = arr[1];
+    let fracNat = switch (Nat.fromText(fracText)) {
+      case (?n) n;
+      case null 0;
+    };
+    let divisor = Nat.pow(10, fracText.size()).toFloat();
+    wholePart + fracNat.toFloat() / divisor;
+  };
+
+  private func daysSince(ts : Int) : Float {
+    let nowNs : Int = Time.now();
+    let diffNs : Int = nowNs - ts;
+    if (diffNs <= 0) { return 0.0; };
+    diffNs.toFloat() / 86_400_000_000_000.0;
+  };
+
+  public query func getRCMStats() : async RCMStats {
+    var totalBilled : Float = 0.0;
+    var totalPaid : Float = 0.0;
+    var approvedCount : Nat = 0;
+    var rejectedCount : Nat = 0;
+    var totalClaims : Nat = 0;
+
+    // Claims value and status breakdown
+    let statusMap = Map.empty<Text, Nat>();
+    for ((_, c) in claims.entries()) {
+      totalClaims += 1;
+      totalBilled += parseFloat(c.billedAmount);
+      if (c.status == "Approved") { approvedCount += 1; };
+      if (c.status == "Rejected") { rejectedCount += 1; };
+      switch (statusMap.get(c.status)) {
+        case (?count) { statusMap.add(c.status, count + 1); };
+        case null { statusMap.add(c.status, 1); };
+      };
+    };
+
+    // Total paid from payments
+    for ((_, p) in payments.entries()) {
+      totalPaid += parseFloat(p.paidAmount);
+    };
+
+    // Pending pre-auths
+    var pendingCount : Nat = 0;
+    for ((_, r) in preAuths.entries()) {
+      if (r.status == "Submitted" or r.status == "QueryRaised") { pendingCount += 1; };
+    };
+
+    // Avg resolution days for resolved denials
+    var resolvedCount : Nat = 0;
+    var totalResolutionDays : Float = 0.0;
+    for ((_, d) in denials.entries()) {
+      if (d.resolvedAt > 0) {
+        resolvedCount += 1;
+        let days = (d.resolvedAt - d.createdAt).toFloat() / 86_400_000_000_000.0;
+        totalResolutionDays += days;
+      };
+    };
+    let avgResolutionDays = if (resolvedCount == 0) 0.0 else totalResolutionDays / resolvedCount.toFloat();
+
+    let approvalRate = if (totalClaims == 0) 0.0 else approvedCount.toFloat() / totalClaims.toFloat() * 100.0;
+    let denialRate = if (totalClaims == 0) 0.0 else rejectedCount.toFloat() / totalClaims.toFloat() * 100.0;
+
+    {
+      totalAR = totalBilled - totalPaid;
+      approvalRate;
+      denialRate;
+      avgResolutionDays;
+      pendingPreAuths = pendingCount;
+      claimsByStatus = statusMap.toArray();
+      totalClaimsValue = totalBilled;
+      totalPaidValue = totalPaid;
+    };
+  };
+
+  public query func getAgingAR() : async AgingAR {
+    let b0to30 = List.empty<ClaimRecord>();
+    let b31to60 = List.empty<ClaimRecord>();
+    let b61to90 = List.empty<ClaimRecord>();
+    let b91plus = List.empty<ClaimRecord>();
+    var totalOutstanding : Float = 0.0;
+
+    for ((_, c) in claims.entries()) {
+      // Only consider open/unpaid claims
+      if (c.status != "Settled" and c.status != "Rejected") {
+        let days = daysSince(c.createdAt);
+        let billed = parseFloat(c.billedAmount);
+        totalOutstanding += billed;
+        if (days <= 30.0) { b0to30.add(c); }
+        else if (days <= 60.0) { b31to60.add(c); }
+        else if (days <= 90.0) { b61to90.add(c); }
+        else { b91plus.add(c); };
+      };
+    };
+
+    {
+      bucket0to30 = b0to30.toArray();
+      bucket31to60 = b31to60.toArray();
+      bucket61to90 = b61to90.toArray();
+      bucket91plus = b91plus.toArray();
+      totalOutstanding;
+    };
   };
 };

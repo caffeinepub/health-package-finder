@@ -1,0 +1,292 @@
+// Version: 1.0.0
+type Appeal__834348853 =
+  {
+    appealReason : Text;
+    claimId : Text;
+    createdAt : Int;
+    denialId : Text;
+    id : Text;
+    notes : Text;
+    patientId : Text;
+    resolvedAt : ?Int;
+    status : Text;
+    submittedAt : ?Int
+  };
+type ClaimRecord__576934803 =
+  {
+    admissionDate : Text;
+    approvedAmount : Text;
+    billedAmount : Text;
+    claimType : Text;
+    createdAt : Int;
+    diagnosisName : Text;
+    dischargeDate : Text;
+    documentChecklist : [DocChecklistItem__466439394];
+    icdCode : Text;
+    id : Text;
+    packageCode : Text;
+    packageName : Text;
+    patientId : Text;
+    patientName : Text;
+    payerName : Text;
+    preAuthId : Text;
+    procedureDetails : Text;
+    rejectionRemarks : Text;
+    schemeType : Text;
+    settlementDate : Text;
+    status : Text;
+    timelineEvents : [ClaimTimelineEvent__124589489];
+    updatedAt : Int
+  };
+type ClaimTimelineEvent__124589489 =
+  {notes : Text; stage : Text; timestamp : Int};
+type ClinicalDocChecklistItem__373415691 =
+  {
+    docName : Text;
+    docType : Text;
+    packageCode : Text;
+    required : Bool;
+    submitted : Bool
+  };
+type ClinicalDocRecord__336642890 =
+  {
+    createdAt : Int;
+    dischargeSummary : Text;
+    doctorNotes : Text;
+    documentChecklist : [ClinicalDocChecklistItem__373415691];
+    id : Text;
+    packageCodes : [Text];
+    packageNames : [Text];
+    patientId : Text;
+    patientName : Text;
+    status : Text;
+    updatedAt : Int
+  };
+type Data__791452850<K, V> =
+  {var count : Nat__490723111; kvs : [var ?(K, V)]};
+type DenialRecord__939112498 =
+  {
+    alertSent : Bool;
+    claimId : Text;
+    createdAt : Int;
+    id : Text;
+    packageCode : Text;
+    packageName : Text;
+    patientId : Text;
+    patientName : Text;
+    payerName : Text;
+    rejectionCategory : Text;
+    rejectionRemarks : Text;
+    resolvedAt : Int;
+    resubmittedAt : Int;
+    rootCauseNotes : Text;
+    schemeType : Text;
+    status : Text;
+    updatedAt : Int
+  };
+type DocChecklistItem__466439394 =
+  {docName : Text; required : Bool; submitted : Bool};
+type DoctorMaster__452669637 =
+  {
+    createdAt : Int;
+    department : Text;
+    email : Text;
+    id : Text;
+    isActive : Bool;
+    name : Text;
+    phone : Text;
+    registrationNumber : Text;
+    specialisation : Text;
+    updatedAt : Int
+  };
+type DocumentRef__204215495 = {docType : Text; documentId : Text};
+type HospitalMaster__168790244 =
+  {
+    address : Text;
+    code : Text;
+    contactPerson : Text;
+    createdAt : Int;
+    email : Text;
+    id : Text;
+    isActive : Bool;
+    nabhNumber : Text;
+    name : Text;
+    phone : Text;
+    rohiniId : Text;
+    updatedAt : Int
+  };
+type IcdMaster__737010370 =
+  {
+    category : Text;
+    code : Text;
+    createdAt : Int;
+    description : Text;
+    id : Text;
+    isActive : Bool;
+    updatedAt : Int
+  };
+type Internal__8484328<K, V> =
+  {children : [var ?Node__46230540<K, V>]; data : Data__791452850<K, V>};
+type Leaf__809889148<K, V> = {data : Data__791452850<K, V>};
+type Nat__490723111 = Nat__920180692;
+type Nat__920180692 = Nat;
+type Node__46230540<K, V> =
+  {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
+type Patient__823362798 =
+  {
+    abhaId : Text;
+    address : Text;
+    createdAt : Int;
+    createdBy : Text;
+    dob : Text;
+    documents : [DocumentRef__204215495];
+    eligibilityCheckedAt : Int;
+    eligibilityStatus : Text;
+    gender : Text;
+    id : Text;
+    name : Text;
+    payerName : Text;
+    payerType : Text;
+    phone : Text;
+    policyEnd : Text;
+    policyNumber : Text;
+    policyStart : Text
+  };
+type PaymentRecord__216844392 =
+  {
+    approvedAmount : Text;
+    billedAmount : Text;
+    claimId : Text;
+    createdAt : Int;
+    discrepancyRemarks : Text;
+    id : Text;
+    paidAmount : Text;
+    patientId : Text;
+    patientName : Text;
+    payerName : Text;
+    paymentDate : Text;
+    paymentMode : Text;
+    reconciledAt : Int;
+    settlementStatus : Text;
+    transactionRef : Text;
+    updatedAt : Int
+  };
+type PreAuthRecord__588946753 =
+  {
+    diagnosisName : Text;
+    documentChecklist : [DocChecklistItem__466439394];
+    expectedTATHours : Nat;
+    id : Text;
+    packageCode : Text;
+    packageName : Text;
+    patientId : Text;
+    patientName : Text;
+    payerName : Text;
+    queries : [QueryMessage__596752817];
+    remarks : Text;
+    requestedAmount : Text;
+    schemeType : Text;
+    status : Text;
+    submittedAt : Int;
+    updatedAt : Int
+  };
+type QueryMessage__596752817 =
+  {fromTPA : Bool; message : Text; timestamp : Int};
+type TpaMaster__613497494 =
+  {
+    code : Text;
+    contactPerson : Text;
+    createdAt : Int;
+    email : Text;
+    id : Text;
+    isActive : Bool;
+    name : Text;
+    phone : Text;
+    tpaType : Text;
+    updatedAt : Int
+  };
+type WardMaster__343072307 =
+  {
+    createdAt : Int;
+    id : Text;
+    isActive : Bool;
+    name : Text;
+    ratePerDay : Text;
+    totalBeds : Nat;
+    updatedAt : Int;
+    wardType : Text
+  };
+actor {
+  stable appeals :
+    {
+      var root : Node__46230540<Text, Appeal__834348853>;
+      var size : Nat__490723111
+    };
+  stable claims :
+    {
+      var root : Node__46230540<Text, ClaimRecord__576934803>;
+      var size : Nat__490723111
+    };
+  stable clinicalDocs :
+    {
+      var root : Node__46230540<Text, ClinicalDocRecord__336642890>;
+      var size : Nat__490723111
+    };
+  stable denials :
+    {
+      var root : Node__46230540<Text, DenialRecord__939112498>;
+      var size : Nat__490723111
+    };
+  stable doctors :
+    {
+      var root : Node__46230540<Text, DoctorMaster__452669637>;
+      var size : Nat__490723111
+    };
+  stable hospitals :
+    {
+      var root : Node__46230540<Text, HospitalMaster__168790244>;
+      var size : Nat__490723111
+    };
+  stable icds :
+    {
+      var root : Node__46230540<Text, IcdMaster__737010370>;
+      var size : Nat__490723111
+    };
+  stable var nextAppealId : Nat;
+  stable var nextClaimId : Nat;
+  stable var nextClinicalDocId : Nat;
+  stable var nextDenialId : Nat;
+  stable var nextDoctorId : Nat;
+  stable var nextHospitalId : Nat;
+  stable var nextIcdId : Nat;
+  stable var nextId : Nat;
+  stable var nextPaymentId : Nat;
+  stable var nextPreAuthId : Nat;
+  stable var nextTpaId : Nat;
+  stable var nextWardId : Nat;
+  stable patients :
+    {
+      var root : Node__46230540<Text, Patient__823362798>;
+      var size : Nat__490723111
+    };
+  stable payments :
+    {
+      var root : Node__46230540<Text, PaymentRecord__216844392>;
+      var size : Nat__490723111
+    };
+  stable preAuths :
+    {
+      var root : Node__46230540<Text, PreAuthRecord__588946753>;
+      var size : Nat__490723111
+    };
+  stable tpas :
+    {
+      var root : Node__46230540<Text, TpaMaster__613497494>;
+      var size : Nat__490723111
+    };
+  stable wards :
+    {
+      var root : Node__46230540<Text, WardMaster__343072307>;
+      var size : Nat__490723111
+    }
+};

@@ -5,11 +5,13 @@ import {
   ClipboardList,
   CreditCard,
   FileCheck,
+  LayoutDashboard,
   Receipt,
   Users,
 } from "lucide-react";
 
 const STEPS = [
+  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "rcm", label: "Patient", icon: Users },
   { key: "preauth", label: "Pre-Auth", icon: FileCheck },
   { key: "clinicaldocs", label: "Clinical Docs", icon: ClipboardList },

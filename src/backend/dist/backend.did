@@ -1,0 +1,500 @@
+type WardMasterRequest = 
+ record {
+   isActive: bool;
+   name: text;
+   ratePerDay: text;
+   totalBeds: nat;
+   wardType: text;
+ };
+type WardMaster = 
+ record {
+   createdAt: int;
+   id: text;
+   isActive: bool;
+   name: text;
+   ratePerDay: text;
+   totalBeds: nat;
+   updatedAt: int;
+   wardType: text;
+ };
+type TpaMasterRequest = 
+ record {
+   code: text;
+   contactPerson: text;
+   email: text;
+   isActive: bool;
+   name: text;
+   phone: text;
+   tpaType: text;
+ };
+type TpaMaster = 
+ record {
+   code: text;
+   contactPerson: text;
+   createdAt: int;
+   email: text;
+   id: text;
+   isActive: bool;
+   name: text;
+   phone: text;
+   tpaType: text;
+   updatedAt: int;
+ };
+type RegisterResult = 
+ variant {
+   err: text;
+   ok: text;
+ };
+type RegisterRequest = 
+ record {
+   abhaId: text;
+   address: text;
+   dob: text;
+   gender: text;
+   name: text;
+   payerName: text;
+   payerType: text;
+   phone: text;
+   policyEnd: text;
+   policyNumber: text;
+   policyStart: text;
+ };
+type RCMStats = 
+ record {
+   approvalRate: float64;
+   avgResolutionDays: float64;
+   claimsByStatus: vec record {
+                         text;
+                         nat;
+                       };
+   denialRate: float64;
+   pendingPreAuths: nat;
+   totalAR: float64;
+   totalClaimsValue: float64;
+   totalPaidValue: float64;
+ };
+type QueryMessage = 
+ record {
+   fromTPA: bool;
+   message: text;
+   timestamp: int;
+ };
+type PreAuthResult = 
+ variant {
+   err: text;
+   ok: text;
+ };
+type PreAuthRequest = 
+ record {
+   diagnosisName: text;
+   documentChecklist: vec DocChecklistItem;
+   expectedTATHours: nat;
+   packageCode: text;
+   packageName: text;
+   patientId: text;
+   patientName: text;
+   payerName: text;
+   requestedAmount: text;
+   schemeType: text;
+ };
+type PreAuthRecord = 
+ record {
+   diagnosisName: text;
+   documentChecklist: vec DocChecklistItem;
+   expectedTATHours: nat;
+   id: text;
+   packageCode: text;
+   packageName: text;
+   patientId: text;
+   patientName: text;
+   payerName: text;
+   queries: vec QueryMessage;
+   remarks: text;
+   requestedAmount: text;
+   schemeType: text;
+   status: text;
+   submittedAt: int;
+   updatedAt: int;
+ };
+type PaymentResult = 
+ variant {
+   err: text;
+   ok: text;
+ };
+type PaymentRequest = 
+ record {
+   approvedAmount: text;
+   billedAmount: text;
+   claimId: text;
+   discrepancyRemarks: text;
+   paidAmount: text;
+   patientId: text;
+   patientName: text;
+   payerName: text;
+   paymentDate: text;
+   paymentMode: text;
+   transactionRef: text;
+ };
+type PaymentRecord = 
+ record {
+   approvedAmount: text;
+   billedAmount: text;
+   claimId: text;
+   createdAt: int;
+   discrepancyRemarks: text;
+   id: text;
+   paidAmount: text;
+   patientId: text;
+   patientName: text;
+   payerName: text;
+   paymentDate: text;
+   paymentMode: text;
+   reconciledAt: int;
+   settlementStatus: text;
+   transactionRef: text;
+   updatedAt: int;
+ };
+type Patient = 
+ record {
+   abhaId: text;
+   address: text;
+   createdAt: int;
+   createdBy: text;
+   dob: text;
+   documents: vec DocumentRef;
+   eligibilityCheckedAt: int;
+   eligibilityStatus: text;
+   gender: text;
+   id: text;
+   name: text;
+   payerName: text;
+   payerType: text;
+   phone: text;
+   policyEnd: text;
+   policyNumber: text;
+   policyStart: text;
+ };
+type MasterResult = 
+ variant {
+   err: text;
+   ok: text;
+ };
+type IcdMasterRequest = 
+ record {
+   category: text;
+   code: text;
+   description: text;
+   isActive: bool;
+ };
+type IcdMaster = 
+ record {
+   category: text;
+   code: text;
+   createdAt: int;
+   description: text;
+   id: text;
+   isActive: bool;
+   updatedAt: int;
+ };
+type HospitalMasterRequest = 
+ record {
+   address: text;
+   code: text;
+   contactPerson: text;
+   email: text;
+   isActive: bool;
+   nabhNumber: text;
+   name: text;
+   phone: text;
+   rohiniId: text;
+ };
+type HospitalMaster = 
+ record {
+   address: text;
+   code: text;
+   contactPerson: text;
+   createdAt: int;
+   email: text;
+   id: text;
+   isActive: bool;
+   nabhNumber: text;
+   name: text;
+   phone: text;
+   rohiniId: text;
+   updatedAt: int;
+ };
+type DocumentRef = 
+ record {
+   docType: text;
+   documentId: text;
+ };
+type DoctorMasterRequest = 
+ record {
+   department: text;
+   email: text;
+   isActive: bool;
+   name: text;
+   phone: text;
+   registrationNumber: text;
+   specialisation: text;
+ };
+type DoctorMaster = 
+ record {
+   createdAt: int;
+   department: text;
+   email: text;
+   id: text;
+   isActive: bool;
+   name: text;
+   phone: text;
+   registrationNumber: text;
+   specialisation: text;
+   updatedAt: int;
+ };
+type DocChecklistItem = 
+ record {
+   docName: text;
+   required: bool;
+   submitted: bool;
+ };
+type DenialResult = 
+ variant {
+   err: text;
+   ok: text;
+ };
+type DenialRequest = 
+ record {
+   claimId: text;
+   packageCode: text;
+   packageName: text;
+   patientId: text;
+   patientName: text;
+   payerName: text;
+   rejectionCategory: text;
+   rejectionRemarks: text;
+   rootCauseNotes: text;
+   schemeType: text;
+ };
+type DenialRecord = 
+ record {
+   alertSent: bool;
+   claimId: text;
+   createdAt: int;
+   id: text;
+   packageCode: text;
+   packageName: text;
+   patientId: text;
+   patientName: text;
+   payerName: text;
+   rejectionCategory: text;
+   rejectionRemarks: text;
+   resolvedAt: int;
+   resubmittedAt: int;
+   rootCauseNotes: text;
+   schemeType: text;
+   status: text;
+   updatedAt: int;
+ };
+type ClinicalDocResult = 
+ variant {
+   err: text;
+   ok: text;
+ };
+type ClinicalDocRequest = 
+ record {
+   dischargeSummary: text;
+   doctorNotes: text;
+   documentChecklist: vec ClinicalDocChecklistItem;
+   packageCodes: vec text;
+   packageNames: vec text;
+   patientId: text;
+   patientName: text;
+ };
+type ClinicalDocRecord = 
+ record {
+   createdAt: int;
+   dischargeSummary: text;
+   doctorNotes: text;
+   documentChecklist: vec ClinicalDocChecklistItem;
+   id: text;
+   packageCodes: vec text;
+   packageNames: vec text;
+   patientId: text;
+   patientName: text;
+   status: text;
+   updatedAt: int;
+ };
+type ClinicalDocChecklistItem = 
+ record {
+   docName: text;
+   docType: text;
+   packageCode: text;
+   required: bool;
+   submitted: bool;
+ };
+type ClaimTimelineEvent = 
+ record {
+   notes: text;
+   stage: text;
+   timestamp: int;
+ };
+type ClaimResult = 
+ variant {
+   err: text;
+   ok: text;
+ };
+type ClaimRequest = 
+ record {
+   admissionDate: text;
+   approvedAmount: text;
+   billedAmount: text;
+   claimType: text;
+   diagnosisName: text;
+   dischargeDate: text;
+   documentChecklist: vec DocChecklistItem;
+   icdCode: text;
+   packageCode: text;
+   packageName: text;
+   patientId: text;
+   patientName: text;
+   payerName: text;
+   preAuthId: text;
+   procedureDetails: text;
+   schemeType: text;
+ };
+type ClaimRecord = 
+ record {
+   admissionDate: text;
+   approvedAmount: text;
+   billedAmount: text;
+   claimType: text;
+   createdAt: int;
+   diagnosisName: text;
+   dischargeDate: text;
+   documentChecklist: vec DocChecklistItem;
+   icdCode: text;
+   id: text;
+   packageCode: text;
+   packageName: text;
+   patientId: text;
+   patientName: text;
+   payerName: text;
+   preAuthId: text;
+   procedureDetails: text;
+   rejectionRemarks: text;
+   schemeType: text;
+   settlementDate: text;
+   status: text;
+   timelineEvents: vec ClaimTimelineEvent;
+   updatedAt: int;
+ };
+type AppealResult = 
+ variant {
+   err: text;
+   ok: Appeal;
+ };
+type AppealInput = 
+ record {
+   appealReason: text;
+   claimId: text;
+   denialId: text;
+   notes: text;
+   patientId: text;
+   status: text;
+ };
+type Appeal = 
+ record {
+   appealReason: text;
+   claimId: text;
+   createdAt: int;
+   denialId: text;
+   id: text;
+   notes: text;
+   patientId: text;
+   resolvedAt: opt int;
+   status: text;
+   submittedAt: opt int;
+ };
+type AgingAR = 
+ record {
+   bucket0to30: vec ClaimRecord;
+   bucket31to60: vec ClaimRecord;
+   bucket61to90: vec ClaimRecord;
+   bucket91plus: vec ClaimRecord;
+   totalOutstanding: float64;
+ };
+service : {
+  addDocument: (patientId: text, documentId: text, docType: text) -> (bool);
+  addQueryResponse: (id: text, message: text, fromTPA: bool) -> (bool);
+  createAppeal: (input: AppealInput) -> (AppealResult);
+  createClaim: (req: ClaimRequest) -> (ClaimResult);
+  createClinicalDoc: (req: ClinicalDocRequest) -> (ClinicalDocResult);
+  createDenial: (req: DenialRequest) -> (DenialResult);
+  createDoctor: (req: DoctorMasterRequest) -> (MasterResult);
+  createHospital: (req: HospitalMasterRequest) -> (MasterResult);
+  createIcd: (req: IcdMasterRequest) -> (MasterResult);
+  createPayment: (req: PaymentRequest) -> (PaymentResult);
+  createPreAuth: (req: PreAuthRequest) -> (PreAuthResult);
+  createTpa: (req: TpaMasterRequest) -> (MasterResult);
+  createWard: (req: WardMasterRequest) -> (MasterResult);
+  deleteDoctor: (id: text) -> (bool);
+  deleteHospital: (id: text) -> (bool);
+  deleteIcd: (id: text) -> (bool);
+  deleteTpa: (id: text) -> (bool);
+  deleteWard: (id: text) -> (bool);
+  getAgingAR: () -> (AgingAR) query;
+  getAppealById: (id: text) -> (opt Appeal) query;
+  getAppeals: () -> (vec Appeal) query;
+  getAppealsByDenialId: (denialId: text) -> (vec Appeal) query;
+  getClaimById: (id: text) -> (opt ClaimRecord) query;
+  getClaims: () -> (vec ClaimRecord) query;
+  getClaimsByPatient: (patientId: text) -> (vec ClaimRecord) query;
+  getClaimsByPreAuth: (preAuthId: text) -> (vec ClaimRecord) query;
+  getClaimsByStatus: (status: text) -> (vec ClaimRecord) query;
+  getClinicalDocById: (id: text) -> (opt ClinicalDocRecord) query;
+  getClinicalDocs: () -> (vec ClinicalDocRecord) query;
+  getClinicalDocsByPatient: (patientId: text) ->
+   (vec ClinicalDocRecord) query;
+  getClinicalDocsByStatus: (status: text) -> (vec ClinicalDocRecord) query;
+  getDenialById: (id: text) -> (opt DenialRecord) query;
+  getDenials: () -> (vec DenialRecord) query;
+  getDenialsByClaimId: (claimId: text) -> (vec DenialRecord) query;
+  getDenialsByStatus: (status: text) -> (vec DenialRecord) query;
+  getDoctors: () -> (vec DoctorMaster) query;
+  getHospitals: () -> (vec HospitalMaster) query;
+  getIcds: () -> (vec IcdMaster) query;
+  getPatientByAbhaId: (abhaId: text) -> (opt Patient) query;
+  getPatientById: (id: text) -> (opt Patient) query;
+  getPatients: () -> (vec Patient) query;
+  getPatientsByStatus: (status: text) -> (vec Patient) query;
+  getPaymentById: (id: text) -> (opt PaymentRecord) query;
+  getPayments: () -> (vec PaymentRecord) query;
+  getPaymentsByClaimId: (claimId: text) -> (vec PaymentRecord) query;
+  getPaymentsByPatient: (patientId: text) -> (vec PaymentRecord) query;
+  getPaymentsByStatus: (status: text) -> (vec PaymentRecord) query;
+  getPreAuthById: (id: text) -> (opt PreAuthRecord) query;
+  getPreAuths: () -> (vec PreAuthRecord) query;
+  getPreAuthsByPatient: (patientId: text) -> (vec PreAuthRecord) query;
+  getPreAuthsByStatus: (status: text) -> (vec PreAuthRecord) query;
+  getRCMStats: () -> (RCMStats) query;
+  getTpas: () -> (vec TpaMaster) query;
+  getWards: () -> (vec WardMaster) query;
+  registerPatient: (req: RegisterRequest) -> (RegisterResult);
+  searchPatients: (searchTerm: text) -> (vec Patient) query;
+  updateAppealStatus: (id: text, status: text, notes: text) -> (AppealResult);
+  updateClaimStatus: (id: text, status: text, remarks: text) -> (bool);
+  updateClinicalDoc: (id: text, doctorNotes: text, dischargeSummary: 
+   text, documentChecklist: vec ClinicalDocChecklistItem, status: text) ->
+   (bool);
+  updateDenialStatus: (id: text, status: text, rootCauseNotes: text,
+   resubmitted: bool) -> (bool);
+  updateDoctor: (id: text, req: DoctorMasterRequest) -> (bool);
+  updateEligibility: (id: text, status: text) -> (bool);
+  updateHospital: (id: text, req: HospitalMasterRequest) -> (bool);
+  updateIcd: (id: text, req: IcdMasterRequest) -> (bool);
+  updatePaymentStatus: (id: text, settlementStatus: text, paidAmount: 
+   text, transactionRef: text, discrepancyRemarks: text) -> (bool);
+  updatePreAuthStatus: (id: text, status: text, remarks: text) -> (bool);
+  updateTpa: (id: text, req: TpaMasterRequest) -> (bool);
+  updateWard: (id: text, req: WardMasterRequest) -> (bool);
+}

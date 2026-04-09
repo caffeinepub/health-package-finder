@@ -32,17 +32,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { useActor } from "@/hooks/useActor";
 import { cn } from "@/lib/utils";
 import {
-  Activity,
   AlertCircle,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Download,
   FileText,
   Loader2,
   Plus,
   RefreshCw,
   Search,
   Send,
+  Trash2,
+  Upload,
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -50,6 +52,438 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { HealthPackage } from "./GenerateNotesModal";
 import { WorkflowBanner } from "./WorkflowBanner";
+
+// ---------------------------------------------------------------------------
+// Per-Package Upload Types
+// ---------------------------------------------------------------------------
+
+interface UploadedDocFile {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  uploadedAt: string;
+  packageCode: string;
+  dataUrl: string;
+}
+
+function lsKey(tempDocId: string, packageCode: string) {
+  return `clinicaldoc_files_${tempDocId}_${packageCode}`;
+}
+
+function loadFilesFromLS(
+  tempDocId: string,
+  packageCode: string,
+): UploadedDocFile[] {
+  try {
+    const raw = localStorage.getItem(lsKey(tempDocId, packageCode));
+    if (!raw) return [];
+    return JSON.parse(raw) as UploadedDocFile[];
+  } catch {
+    return [];
+  }
+}
+
+function saveFilesToLS(
+  tempDocId: string,
+  packageCode: string,
+  files: UploadedDocFile[],
+) {
+  try {
+    localStorage.setItem(lsKey(tempDocId, packageCode), JSON.stringify(files));
+  } catch {
+    // storage full — silently skip
+  }
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function autoMatchFile(fileName: string, docName: string): boolean {
+  const nameLower = fileName.toLowerCase().replace(/[\s._-]/g, "");
+  const words = docName
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 4);
+  return words.some((w) => nameLower.includes(w));
+}
+
+// ---------------------------------------------------------------------------
+// Per-Package Upload Section
+// ---------------------------------------------------------------------------
+
+function PerPackageUploadSection({
+  pkg,
+  tempDocId,
+  onChecklistAutoUpdate,
+}: {
+  pkg: HealthPackage;
+  tempDocId: string;
+  onChecklistAutoUpdate: (
+    packageCode: string,
+    matchedDocNames: string[],
+  ) => void;
+}) {
+  const [files, setFiles] = useState<UploadedDocFile[]>(() =>
+    loadFilesFromLS(tempDocId, pkg.packageCode),
+  );
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const preAuthDocs = parseSemicolon(pkg.preAuthDocument ?? "");
+  const claimDocs = parseSemicolon(pkg.claimDocument ?? "");
+  const allDocNames = Array.from(new Set([...preAuthDocs, ...claimDocs]));
+  const totalDocs = allDocNames.length;
+
+  // Compute completion color
+  const checkedCount = allDocNames.filter((docName) =>
+    files.some((f) => autoMatchFile(f.name, docName)),
+  ).length;
+  const pct = totalDocs > 0 ? checkedCount / totalDocs : 1;
+  const headerColor =
+    pct === 1
+      ? "border-green-300 bg-green-50"
+      : pct >= 0.5
+        ? "border-amber-300 bg-amber-50"
+        : "border-red-300 bg-red-50";
+  const badgeColor =
+    pct === 1
+      ? "bg-green-100 text-green-700 border-green-300"
+      : pct >= 0.5
+        ? "bg-amber-100 text-amber-700 border-amber-300"
+        : "bg-red-100 text-red-700 border-red-300";
+
+  function persistAndUpdate(next: UploadedDocFile[]) {
+    setFiles(next);
+    saveFilesToLS(tempDocId, pkg.packageCode, next);
+    const matched = allDocNames.filter((docName) =>
+      next.some((f) => autoMatchFile(f.name, docName)),
+    );
+    onChecklistAutoUpdate(pkg.packageCode, matched);
+  }
+
+  function processFiles(rawFiles: File[]) {
+    const readers = rawFiles.map(
+      (file) =>
+        new Promise<UploadedDocFile>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            resolve({
+              id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              uploadedAt: new Date().toISOString(),
+              packageCode: pkg.packageCode,
+              dataUrl: e.target?.result as string,
+            });
+          };
+          reader.readAsDataURL(file);
+        }),
+    );
+    Promise.all(readers).then((newFiles) => {
+      const next = [...files, ...newFiles];
+      persistAndUpdate(next);
+    });
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragOver(false);
+    const dropped = Array.from(e.dataTransfer.files);
+    if (dropped.length) processFiles(dropped);
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragOver(true);
+  }
+
+  function handleDragLeave() {
+    setIsDragOver(false);
+  }
+
+  function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(e.target.files ?? []);
+    if (selected.length) processFiles(selected);
+    e.target.value = "";
+  }
+
+  function deleteFile(fileId: string) {
+    const next = files.filter((f) => f.id !== fileId);
+    persistAndUpdate(next);
+  }
+
+  function downloadFile(file: UploadedDocFile) {
+    const a = document.createElement("a");
+    a.href = file.dataUrl;
+    a.download = file.name;
+    a.click();
+  }
+
+  return (
+    <div
+      data-ocid={`clinicaldocs.pkg_upload.card.${pkg.packageCode}`}
+      className={cn(
+        "rounded-xl border-2 overflow-hidden transition-colors",
+        headerColor,
+      )}
+    >
+      {/* Card Header */}
+      <button
+        type="button"
+        onClick={() => setIsExpanded((e) => !e)}
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-black/5 transition-colors"
+      >
+        <span className="flex items-center justify-center h-7 w-7 rounded-lg bg-white/70 border border-current/20 shrink-0">
+          <Upload className="h-3.5 w-3.5 text-hp-blue" />
+        </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-mono text-xs font-bold text-hp-blue bg-white/70 border border-hp-blue/20 px-1.5 py-0.5 rounded">
+              {pkg.packageCode}
+            </span>
+            <span className="text-sm font-semibold text-hp-body truncate">
+              {pkg.packageName}
+            </span>
+          </div>
+          <p className="text-xs text-hp-muted mt-0.5">
+            {pkg.speciality} · {files.length} file
+            {files.length !== 1 ? "s" : ""} uploaded · {checkedCount}/
+            {totalDocs} docs matched
+          </p>
+        </div>
+        <Badge
+          className={cn(
+            "text-[10px] border rounded-full px-2.5 py-0.5 font-semibold shrink-0",
+            badgeColor,
+          )}
+        >
+          {pct === 1 ? "Complete" : pct >= 0.5 ? "Partial" : "Incomplete"}
+        </Badge>
+        {isExpanded ? (
+          <ChevronUp className="h-4 w-4 text-hp-muted shrink-0" />
+        ) : (
+          <ChevronDown className="h-4 w-4 text-hp-muted shrink-0" />
+        )}
+      </button>
+
+      {/* Expanded Body */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.18 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-white border-t-2 border-current/10 px-4 py-4 space-y-4">
+              {/* Document Lists */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                {preAuthDocs.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-hp-muted mb-1.5">
+                      Pre-Auth Documents ({preAuthDocs.length})
+                    </p>
+                    <ul className="space-y-1">
+                      {preAuthDocs.map((doc) => {
+                        const matched = files.some((f) =>
+                          autoMatchFile(f.name, doc),
+                        );
+                        return (
+                          <li
+                            key={doc}
+                            className={cn(
+                              "flex items-start gap-2 text-xs px-2.5 py-1.5 rounded-lg border",
+                              matched
+                                ? "bg-green-50 border-green-200 text-green-800"
+                                : "bg-red-50/40 border-red-100 text-hp-body",
+                            )}
+                          >
+                            {matched ? (
+                              <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0 mt-0.5" />
+                            ) : (
+                              <AlertCircle className="h-3.5 w-3.5 text-red-400 shrink-0 mt-0.5" />
+                            )}
+                            <span className="leading-snug">{doc}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+                {claimDocs.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-hp-muted mb-1.5">
+                      Claim Documents ({claimDocs.length})
+                    </p>
+                    <ul className="space-y-1">
+                      {claimDocs.map((doc) => {
+                        const matched = files.some((f) =>
+                          autoMatchFile(f.name, doc),
+                        );
+                        return (
+                          <li
+                            key={doc}
+                            className={cn(
+                              "flex items-start gap-2 text-xs px-2.5 py-1.5 rounded-lg border",
+                              matched
+                                ? "bg-green-50 border-green-200 text-green-800"
+                                : "bg-gray-50 border-hp-border text-hp-body",
+                            )}
+                          >
+                            {matched ? (
+                              <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0 mt-0.5" />
+                            ) : (
+                              <AlertCircle className="h-3.5 w-3.5 text-hp-muted shrink-0 mt-0.5" />
+                            )}
+                            <span className="leading-snug">{doc}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Drop Zone */}
+              <button
+                type="button"
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                data-ocid={`clinicaldocs.pkg_upload.dropzone.${pkg.packageCode}`}
+                className={cn(
+                  "w-full border-2 border-dashed rounded-xl px-4 py-6 text-center cursor-pointer transition-all",
+                  isDragOver
+                    ? "border-hp-blue bg-hp-blue/5 scale-[1.01]"
+                    : "border-hp-border hover:border-hp-blue/50 hover:bg-hp-bg/60",
+                )}
+              >
+                <Upload
+                  className={cn(
+                    "h-7 w-7 mx-auto mb-2 transition-colors",
+                    isDragOver ? "text-hp-blue" : "text-hp-muted/50",
+                  )}
+                />
+                <p className="text-sm font-semibold text-hp-body">
+                  {isDragOver
+                    ? "Drop files here"
+                    : "Drag & drop files or click to browse"}
+                </p>
+                <p className="text-xs text-hp-muted mt-1">
+                  PDF, JPG, PNG, DOC, DOCX, XLS — any file type accepted
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.gif,.webp"
+                  className="hidden"
+                  onChange={handleFileInput}
+                />
+              </button>
+
+              {/* Uploaded Files Table */}
+              {files.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-hp-muted mb-2">
+                    Uploaded Files ({files.length})
+                  </p>
+                  <div className="rounded-lg border border-hp-border overflow-hidden">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-hp-bg border-b border-hp-border">
+                          <th className="text-left px-3 py-2 text-hp-muted font-semibold">
+                            File Name
+                          </th>
+                          <th className="text-right px-3 py-2 text-hp-muted font-semibold hidden sm:table-cell">
+                            Size
+                          </th>
+                          <th className="text-right px-3 py-2 text-hp-muted font-semibold hidden md:table-cell">
+                            Uploaded
+                          </th>
+                          <th className="text-right px-3 py-2 text-hp-muted font-semibold w-16">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {files.map((file) => {
+                          const isMatched = allDocNames.some((doc) =>
+                            autoMatchFile(file.name, doc),
+                          );
+                          return (
+                            <tr
+                              key={file.id}
+                              className="border-b border-hp-border last:border-0 hover:bg-hp-bg/50 transition-colors"
+                            >
+                              <td className="px-3 py-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  {isMatched && (
+                                    <CheckCircle2 className="h-3 w-3 text-green-500 shrink-0" />
+                                  )}
+                                  <span className="font-medium text-hp-body truncate max-w-[200px]">
+                                    {file.name}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-3 py-2 text-right text-hp-muted hidden sm:table-cell tabular-nums">
+                                {formatFileSize(file.size)}
+                              </td>
+                              <td className="px-3 py-2 text-right text-hp-muted hidden md:table-cell">
+                                {new Date(file.uploadedAt).toLocaleDateString(
+                                  "en-IN",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  },
+                                )}
+                              </td>
+                              <td className="px-3 py-2 text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  <button
+                                    type="button"
+                                    data-ocid={`clinicaldocs.pkg_upload.download.${pkg.packageCode}`}
+                                    onClick={() => downloadFile(file)}
+                                    className="p-1 rounded hover:bg-blue-50 text-hp-muted hover:text-hp-blue transition-colors"
+                                    title="Download"
+                                  >
+                                    <Download className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    data-ocid={`clinicaldocs.pkg_upload.delete.${pkg.packageCode}`}
+                                    onClick={() => deleteFile(file.id)}
+                                    className="p-1 rounded hover:bg-red-50 text-hp-muted hover:text-red-500 transition-colors"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -506,6 +940,9 @@ function NewDocumentSetForm({
   const [dischargeSummary, setDischargeSummary] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Per-package file upload state
+  const [tempDocId] = useState(() => `tmp_${Date.now()}`);
+
   // Load packages on mount
   useEffect(() => {
     fetch("/assets/packages.json")
@@ -600,6 +1037,29 @@ function NewDocumentSetForm({
       prev.map((item, i) =>
         i === index ? { ...item, submitted: !item.submitted } : item,
       ),
+    );
+  }
+
+  // Auto-update checklist submission status when files are uploaded
+  function handleChecklistAutoUpdate(
+    packageCode: string,
+    matchedDocNames: string[],
+  ) {
+    // Auto-check matching checklist items
+    setChecklist((prev) =>
+      prev.map((item) => {
+        const belongsToPackage =
+          item.packageCode === packageCode ||
+          item.packageCode.includes(packageCode);
+        if (!belongsToPackage) return item;
+        const autoMatched = matchedDocNames.some(
+          (dn) => dn.toLowerCase() === item.docName.toLowerCase(),
+        );
+        if (autoMatched && !item.submitted) {
+          return { ...item, submitted: true };
+        }
+        return item;
+      }),
     );
   }
 
@@ -841,6 +1301,31 @@ function NewDocumentSetForm({
           )}
         </div>
       </SectionCard>
+
+      {/* Per-Package Document Upload Sections */}
+      {selectedPackages.length > 0 && (
+        <SectionCard
+          title="Upload Documents by Package"
+          icon={<Upload className="h-4 w-4" />}
+          badge={
+            <span className="text-xs text-hp-muted">
+              {selectedPackages.length} package
+              {selectedPackages.length !== 1 ? "s" : ""}
+            </span>
+          }
+        >
+          <div className="space-y-3">
+            {selectedPackages.map((pkg) => (
+              <PerPackageUploadSection
+                key={pkg.packageCode}
+                pkg={pkg}
+                tempDocId={tempDocId}
+                onChecklistAutoUpdate={handleChecklistAutoUpdate}
+              />
+            ))}
+          </div>
+        </SectionCard>
+      )}
 
       {/* Document Checklist */}
       {checklist.length > 0 && (

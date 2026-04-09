@@ -1,6 +1,7 @@
 import type {
   ClaimRecord,
   ClaimRequest,
+  ClaimTimelineEvent,
   DocChecklistItem,
   backendInterface as FullBackendInterface,
   Patient,
@@ -30,17 +31,25 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Clock,
   CreditCard,
   Loader2,
   Plus,
   Receipt,
   RefreshCw,
   Search,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldX,
   TrendingUp,
+  XCircle,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import type { ValidationStatus } from "./ClaimValidationModule";
+import { loadValidationRecord } from "./ClaimValidationModule";
 import { WorkflowBanner } from "./WorkflowBanner";
 
 // ---------------------------------------------------------------------------
@@ -57,6 +66,35 @@ function formatDateTime(ns: bigint): string {
     minute: "2-digit",
     hour12: false,
   });
+}
+
+function formatDateShort(ns: bigint): string {
+  const ms = Number(ns / 1_000_000n);
+  return new Date(ms).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function formatTimeShort(ns: bigint): string {
+  const ms = Number(ns / 1_000_000n);
+  return new Date(ms).toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+function daysBetween(fromNs: bigint, toNs: bigint): number {
+  const msFrom = Number(fromNs / 1_000_000n);
+  const msTo = Number(toNs / 1_000_000n);
+  return Math.round(Math.abs(msTo - msFrom) / (1000 * 60 * 60 * 24));
+}
+
+function daysFromNow(ns: bigint): number {
+  const ms = Number(ns / 1_000_000n);
+  return Math.round((Date.now() - ms) / (1000 * 60 * 60 * 24));
 }
 
 function formatCurrency(val: string): string {
@@ -76,6 +114,25 @@ const CLAIM_STATUSES = [
   "Rejected",
   "Resubmitted",
 ];
+
+// The ordered list of stages in the claim lifecycle
+const TIMELINE_STAGES = [
+  { key: "Submitted", label: "Submitted", tatHours: 0 },
+  { key: "Acknowledged", label: "Acknowledged", tatHours: 2 },
+  { key: "UnderReview", label: "Under Review", tatHours: 48 },
+  { key: "Settled", label: "Settled", tatHours: 168 }, // 7 days
+];
+
+// Map status → stage index for "current" detection
+const STATUS_TO_STAGE_INDEX: Record<string, number> = {
+  Submitted: 0,
+  Acknowledged: 1,
+  UnderReview: 2,
+  Settled: 3,
+  Rejected: 3,
+  Resubmitted: 1,
+  Draft: -1,
+};
 
 // ---------------------------------------------------------------------------
 // Status Badge
@@ -134,6 +191,332 @@ function ClaimTypeBadge({ claimType }: { claimType: string }) {
     >
       {isCashless ? "Cashless" : "Reimbursement"}
     </Badge>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Days Since Submission Badge
+// ---------------------------------------------------------------------------
+
+function DaysSinceBadge({ createdAt }: { createdAt: bigint }) {
+  const days = daysFromNow(createdAt);
+  const isDelayed = days > 7;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border",
+        isDelayed
+          ? "bg-red-50 text-red-600 border-red-200"
+          : days > 3
+            ? "bg-amber-50 text-amber-600 border-amber-200"
+            : "bg-blue-50 text-blue-600 border-blue-200",
+      )}
+    >
+      <Clock className="h-2.5 w-2.5" />
+      {days === 0 ? "Today" : `${days}d`}
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Claim Timeline Component
+// ---------------------------------------------------------------------------
+
+interface TimelineStageInfo {
+  key: string;
+  label: string;
+  event?: ClaimTimelineEvent;
+  state: "completed" | "current" | "future" | "rejected";
+  durationDays?: number;
+}
+
+function buildTimelineStages(claim: ClaimRecord): TimelineStageInfo[] {
+  const isRejected = claim.status === "Rejected";
+  const currentIndex = STATUS_TO_STAGE_INDEX[claim.status] ?? 0;
+
+  // Build a lookup from stage key to timeline event
+  const eventMap: Record<string, ClaimTimelineEvent> = {};
+  for (const ev of claim.timelineEvents) {
+    eventMap[ev.stage] = ev;
+  }
+
+  const stages: TimelineStageInfo[] = TIMELINE_STAGES.map((stage, index) => {
+    const event = eventMap[stage.key];
+    let state: TimelineStageInfo["state"];
+
+    if (isRejected && index === 3) {
+      state = "rejected";
+    } else if (index < currentIndex) {
+      state = "completed";
+    } else if (index === currentIndex) {
+      state = isRejected ? "rejected" : "current";
+    } else {
+      state = "future";
+    }
+
+    return { key: stage.key, label: stage.label, event, state };
+  });
+
+  // If rejected, replace last stage label with "Rejected"
+  if (isRejected) {
+    stages[3] = {
+      ...stages[3],
+      key: "Rejected",
+      label: "Rejected",
+      event: eventMap.Rejected ?? eventMap.UnderReview,
+      state: "rejected",
+    };
+  }
+
+  // Compute durations between consecutive completed stages
+  for (let i = 1; i < stages.length; i++) {
+    const prev = stages[i - 1];
+    const curr = stages[i];
+    if (
+      prev.event &&
+      curr.event &&
+      (curr.state === "completed" || curr.state === "current")
+    ) {
+      curr.durationDays = daysBetween(
+        prev.event.timestamp,
+        curr.event.timestamp,
+      );
+    }
+  }
+
+  return stages;
+}
+
+function ClaimTimeline({ claim }: { claim: ClaimRecord }) {
+  const stages = buildTimelineStages(claim);
+  const submissionTs =
+    claim.timelineEvents.find((e) => e.stage === "Submitted")?.timestamp ??
+    claim.createdAt;
+  const latestTs =
+    claim.timelineEvents.length > 0
+      ? claim.timelineEvents.reduce(
+          (max, e) => (e.timestamp > max ? e.timestamp : max),
+          claim.timelineEvents[0].timestamp,
+        )
+      : claim.createdAt;
+  const totalDays =
+    daysBetween(submissionTs, latestTs) || daysFromNow(submissionTs);
+
+  const isSettled = claim.status === "Settled";
+  const isRejected = claim.status === "Rejected";
+  const isOnTrack = totalDays <= 7;
+  const isAckBreached =
+    claim.timelineEvents.length === 1 && daysFromNow(submissionTs) > 0.083; // 2h in days
+
+  // Compute % completion for progress bar
+  const completedCount = stages.filter(
+    (s) => s.state === "completed" || s.state === "current",
+  ).length;
+  const progressPct = Math.round(
+    ((completedCount - 1) / (stages.length - 1)) * 100,
+  );
+
+  return (
+    <div className="bg-gradient-to-br from-slate-50 to-white border border-hp-border rounded-xl p-5 space-y-5">
+      {/* Journey Summary bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-hp-muted uppercase tracking-wide">
+            Claim Journey
+          </span>
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border",
+              isSettled
+                ? "bg-green-50 text-green-700 border-green-200"
+                : isRejected
+                  ? "bg-red-50 text-red-600 border-red-200"
+                  : isOnTrack
+                    ? "bg-blue-50 text-blue-700 border-blue-200"
+                    : "bg-amber-50 text-amber-700 border-amber-200",
+            )}
+          >
+            {isSettled ? (
+              <>
+                <CheckCircle2 className="h-2.5 w-2.5" /> Settled
+              </>
+            ) : isRejected ? (
+              <>
+                <XCircle className="h-2.5 w-2.5" /> Rejected
+              </>
+            ) : isOnTrack ? (
+              <>
+                <CheckCircle2 className="h-2.5 w-2.5" /> On Track
+              </>
+            ) : (
+              <>
+                <AlertCircle className="h-2.5 w-2.5" /> Delayed
+              </>
+            )}
+          </span>
+          {isAckBreached && !isSettled && !isRejected && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border bg-red-50 text-red-600 border-red-200">
+              <AlertCircle className="h-2.5 w-2.5" /> Ack. overdue
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-3 text-xs text-hp-muted">
+          <span>
+            <span className="font-bold text-hp-body">{totalDays}</span> day
+            {totalDays !== 1 ? "s" : ""} elapsed
+          </span>
+          <span className="text-hp-border">|</span>
+          <span>
+            TAT target: <span className="font-bold text-hp-body">7 days</span>
+          </span>
+        </div>
+      </div>
+
+      {/* Horizontal progress bar */}
+      <div className="relative">
+        {/* Track */}
+        <div className="absolute top-[14px] left-0 right-0 h-0.5 bg-gray-200 z-0" />
+        {/* Fill */}
+        <div
+          className={cn(
+            "absolute top-[14px] left-0 h-0.5 z-0 transition-all duration-500",
+            isRejected
+              ? "bg-gradient-to-r from-green-400 via-amber-400 to-red-400"
+              : "bg-gradient-to-r from-green-400 to-green-500",
+          )}
+          style={{ width: `${Math.max(0, progressPct)}%` }}
+        />
+
+        {/* Stage nodes */}
+        <div className="relative z-10 flex items-start justify-between">
+          {stages.map((stage, i) => {
+            const isLast = i === stages.length - 1;
+            return (
+              <div
+                key={stage.key}
+                className={cn(
+                  "flex flex-col items-center text-center",
+                  isLast
+                    ? "items-end"
+                    : i === 0
+                      ? "items-start"
+                      : "items-center",
+                  "flex-1 min-w-0",
+                )}
+              >
+                {/* Dot */}
+                <div
+                  className={cn(
+                    "h-7 w-7 rounded-full border-2 flex items-center justify-center mb-2 transition-all duration-300",
+                    stage.state === "completed" &&
+                      "bg-green-500 border-green-600 shadow-[0_0_0_3px_rgba(34,197,94,0.15)]",
+                    stage.state === "current" &&
+                      "bg-amber-400 border-amber-500 shadow-[0_0_0_4px_rgba(251,191,36,0.25)] animate-pulse",
+                    stage.state === "rejected" &&
+                      "bg-red-500 border-red-600 shadow-[0_0_0_3px_rgba(239,68,68,0.15)]",
+                    stage.state === "future" && "bg-white border-gray-300",
+                  )}
+                >
+                  {stage.state === "completed" && (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+                  )}
+                  {stage.state === "current" && (
+                    <Clock className="h-3.5 w-3.5 text-white" />
+                  )}
+                  {stage.state === "rejected" && (
+                    <XCircle className="h-3.5 w-3.5 text-white" />
+                  )}
+                  {stage.state === "future" && (
+                    <div className="h-2.5 w-2.5 rounded-full bg-gray-200" />
+                  )}
+                </div>
+
+                {/* Label */}
+                <p
+                  className={cn(
+                    "text-[10px] font-bold leading-tight",
+                    stage.state === "completed" && "text-green-700",
+                    stage.state === "current" && "text-amber-700",
+                    stage.state === "rejected" && "text-red-700",
+                    stage.state === "future" && "text-gray-400",
+                  )}
+                >
+                  {stage.label}
+                </p>
+
+                {/* Date */}
+                {stage.event ? (
+                  <p className="text-[9px] text-hp-muted mt-0.5 leading-tight">
+                    {formatDateShort(stage.event.timestamp)}
+                  </p>
+                ) : (
+                  <p className="text-[9px] text-gray-300 mt-0.5">—</p>
+                )}
+
+                {/* Time */}
+                {stage.event && (
+                  <p className="text-[9px] text-hp-muted leading-tight">
+                    {formatTimeShort(stage.event.timestamp)}
+                  </p>
+                )}
+
+                {/* Duration between stages */}
+                {stage.durationDays !== undefined &&
+                  stage.durationDays >= 0 && (
+                    <span
+                      className={cn(
+                        "mt-1 text-[9px] font-semibold px-1.5 py-0 rounded-full border",
+                        stage.durationDays <= 1
+                          ? "bg-green-50 text-green-600 border-green-200"
+                          : stage.durationDays <= 3
+                            ? "bg-amber-50 text-amber-600 border-amber-200"
+                            : "bg-red-50 text-red-600 border-red-200",
+                      )}
+                    >
+                      +{stage.durationDays}d
+                    </span>
+                  )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Timeline event log */}
+      {claim.timelineEvents.length > 0 && (
+        <div className="border-t border-hp-border pt-3">
+          <p className="text-[10px] font-semibold text-hp-muted uppercase tracking-wider mb-2">
+            Event Log
+          </p>
+          <div className="space-y-1.5">
+            {[...claim.timelineEvents]
+              .sort((a, b) => Number(a.timestamp - b.timestamp))
+              .map((ev, i) => (
+                <div
+                  key={`${ev.stage}-${i}`}
+                  className="flex items-start gap-2.5 text-xs"
+                >
+                  <div className="mt-0.5 h-4 w-4 rounded-full bg-hp-blue/10 border border-hp-blue/20 flex items-center justify-center shrink-0">
+                    <div className="h-1.5 w-1.5 rounded-full bg-hp-blue" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-semibold text-hp-body">
+                      {ev.stage}
+                    </span>
+                    {ev.notes && (
+                      <span className="text-hp-muted ml-1.5">— {ev.notes}</span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-hp-muted shrink-0 whitespace-nowrap">
+                    {formatDateShort(ev.timestamp)}{" "}
+                    {formatTimeShort(ev.timestamp)}
+                  </span>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -274,7 +657,6 @@ function NewClaimForm({
   const [checklist, setChecklist] = useState<DocChecklistItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Consume prefill on mount
   // biome-ignore lint/correctness/useExhaustiveDependencies: prefillConsumed is a ref, stable across renders
   useEffect(() => {
     if (!prefill || prefillConsumed.current || !actor) return;
@@ -292,7 +674,6 @@ function NewClaimForm({
     prefillConsumed.current = true;
 
     async function applyPrefill() {
-      // Search for patient
       setPatientSearch(p.patientName ?? p.patientId ?? "");
       setIsSearchingPatient(true);
       try {
@@ -303,7 +684,6 @@ function NewClaimForm({
         if (patient) {
           setSelectedPatient(patient);
           setPatientSearch(patient.name);
-          // Load pre-auths for this patient
           setIsLoadingPreAuths(true);
           try {
             const pas = await actor!.getPreAuthsByPatient(patient.id);
@@ -332,7 +712,6 @@ function NewClaimForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefill, actor]);
 
-  // Patient search debounce
   const handlePatientSearchChange = useCallback(
     (value: string) => {
       setPatientSearch(value);
@@ -369,7 +748,6 @@ function NewClaimForm({
     setIsLoadingPreAuths(true);
     try {
       const pas = await actor.getPreAuthsByPatient(p.id);
-      // Only show approved pre-auths
       setPreAuths(pas.filter((pa) => pa.status === "Approved"));
     } catch {
       setPreAuths([]);
@@ -382,7 +760,6 @@ function NewClaimForm({
     const pa = preAuths.find((p) => p.id === preAuthId);
     if (!pa) return;
     setSelectedPreAuth(pa);
-    // Auto-fill from pre-auth
     setChecklist(pa.documentChecklist.map((d) => ({ ...d, submitted: false })));
   }
 
@@ -423,7 +800,6 @@ function NewClaimForm({
       const result = await actor.createClaim(req);
       if ("ok" in result) {
         toast.success(`Claim submitted successfully. ID: ${result.ok}`);
-        // Reset
         setSelectedPatient(null);
         setPatientSearch("");
         setPreAuths([]);
@@ -791,7 +1167,54 @@ function NewClaimForm({
 }
 
 // ---------------------------------------------------------------------------
-// Tab 2: Claims List
+// Inline Validation Status Badge (reads from localStorage)
+// ---------------------------------------------------------------------------
+
+function InlineValidationBadge({ claimId }: { claimId: string }) {
+  const record = loadValidationRecord(claimId);
+  const status: ValidationStatus = record?.validationStatus ?? "NotValidated";
+
+  const config: Record<
+    ValidationStatus,
+    { label: string; icon: React.ReactNode; cls: string }
+  > = {
+    Pass: {
+      label: "Validated",
+      icon: <ShieldCheck className="h-3 w-3" />,
+      cls: "bg-green-100 text-green-700 border-green-200",
+    },
+    Warnings: {
+      label: "Warnings",
+      icon: <ShieldAlert className="h-3 w-3" />,
+      cls: "bg-yellow-100 text-yellow-700 border-yellow-200",
+    },
+    Failed: {
+      label: "Doc Failed",
+      icon: <ShieldX className="h-3 w-3" />,
+      cls: "bg-red-100 text-red-700 border-red-200",
+    },
+    NotValidated: {
+      label: "Not Validated",
+      icon: <Shield className="h-3 w-3" />,
+      cls: "bg-gray-100 text-gray-500 border-gray-200",
+    },
+  };
+  const c = config[status];
+  return (
+    <Badge
+      className={cn(
+        "text-xs border rounded-full px-2 py-0.5 font-semibold flex items-center gap-1",
+        c.cls,
+      )}
+    >
+      {c.icon}
+      {c.label}
+    </Badge>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tab 2: Claims List — ClaimCard
 // ---------------------------------------------------------------------------
 
 function ClaimCard({
@@ -808,6 +1231,7 @@ function ClaimCard({
   onNavigate?: (page: string, data?: Record<string, unknown>) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [timelineOpen, setTimelineOpen] = useState(false);
   const [statusUpdate, setStatusUpdate] = useState("");
   const [remarks, setRemarks] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
@@ -837,6 +1261,9 @@ function ClaimCard({
     }
   }
 
+  const daysSince = daysFromNow(claim.createdAt);
+  const hasTimeline = claim.timelineEvents && claim.timelineEvents.length > 0;
+
   return (
     <motion.div
       layout
@@ -856,6 +1283,10 @@ function ClaimCard({
               </p>
               <ClaimStatusBadge status={claim.status} />
               <ClaimTypeBadge claimType={claim.claimType} />
+              {/* Days since submission badge */}
+              <DaysSinceBadge createdAt={claim.createdAt} />
+              {/* Validation badge */}
+              <InlineValidationBadge claimId={claim.id} />
             </div>
             <p className="text-xs text-hp-muted mt-0.5">
               {claim.id} · {formatDateTime(claim.createdAt)}
@@ -957,6 +1388,42 @@ function ClaimCard({
               Record Payment
             </Button>
           )}
+          {onNavigate && (
+            <Button
+              data-ocid={`claims.validate_docs.button.${index + 1}`}
+              size="sm"
+              onClick={() =>
+                onNavigate("claim-validation", { claimId: claim.id })
+              }
+              className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Validate Docs
+            </Button>
+          )}
+
+          {/* Timeline toggle */}
+          <button
+            type="button"
+            data-ocid={`claims.timeline.toggle.${index + 1}`}
+            onClick={() => setTimelineOpen((t) => !t)}
+            className={cn(
+              "flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border transition-colors",
+              timelineOpen
+                ? "bg-hp-blue text-white border-hp-blue"
+                : "bg-white text-hp-blue border-hp-blue/40 hover:bg-hp-blue/5",
+            )}
+            title="View Claim Timeline"
+          >
+            <Clock className="h-3 w-3" />
+            {timelineOpen ? "Hide Timeline" : "View Timeline"}
+            {hasTimeline && !timelineOpen && (
+              <span className="ml-0.5 bg-hp-blue text-white text-[9px] font-bold px-1 rounded-full">
+                {claim.timelineEvents.length}
+              </span>
+            )}
+          </button>
+
           <button
             type="button"
             data-ocid={`claims.list.toggle.${index + 1}`}
@@ -978,10 +1445,29 @@ function ClaimCard({
         </div>
       </div>
 
+      {/* Timeline Section */}
+      <AnimatePresence>
+        {timelineOpen && (
+          <motion.div
+            key="timeline"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className="border-t border-hp-border overflow-hidden"
+          >
+            <div className="px-5 py-4 bg-gradient-to-b from-blue-50/30 to-white">
+              <ClaimTimeline claim={claim} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Expanded Details */}
       <AnimatePresence>
         {expanded && (
           <motion.div
+            key="details"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
@@ -989,6 +1475,37 @@ function ClaimCard({
             className="border-t border-hp-border overflow-hidden"
           >
             <div className="px-5 py-4 bg-hp-bg/40 space-y-3">
+              {/* Journey Summary */}
+              <div className="flex flex-wrap items-center gap-3 pb-3 border-b border-hp-border">
+                <div className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-hp-muted" />
+                  <span className="text-xs text-hp-muted">Journey:</span>
+                  <span className="text-xs font-bold text-hp-body">
+                    {daysSince} day{daysSince !== 1 ? "s" : ""} since submission
+                  </span>
+                </div>
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border",
+                    daysSince <= 7
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : "bg-amber-50 text-amber-700 border-amber-200",
+                  )}
+                >
+                  {daysSince <= 7 ? (
+                    <>
+                      <CheckCircle2 className="h-2.5 w-2.5" /> On Track (target:
+                      7d)
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="h-2.5 w-2.5" /> Delayed (target:
+                      7d)
+                    </>
+                  )}
+                </span>
+              </div>
+
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-xs">
                 {claim.preAuthId && (
                   <div>
@@ -1253,6 +1770,20 @@ function ClaimsDashboard({ claims }: { claims: ClaimRecord[] }) {
     (c) => c.claimType === "reimbursement",
   ).length;
 
+  // Claims by aging bucket
+  const agingBuckets = {
+    "0-7d": claims.filter((c) => daysFromNow(c.createdAt) <= 7).length,
+    "8-14d": claims.filter((c) => {
+      const d = daysFromNow(c.createdAt);
+      return d > 7 && d <= 14;
+    }).length,
+    "15-30d": claims.filter((c) => {
+      const d = daysFromNow(c.createdAt);
+      return d > 14 && d <= 30;
+    }).length,
+    "30d+": claims.filter((c) => daysFromNow(c.createdAt) > 30).length,
+  };
+
   const recent5 = [...claims]
     .sort((a, b) => Number(b.createdAt - a.createdAt))
     .slice(0, 5);
@@ -1361,6 +1892,54 @@ function ClaimsDashboard({ claims }: { claims: ClaimRecord[] }) {
         </div>
       </div>
 
+      {/* Aging Analysis */}
+      <div className="bg-white rounded-xl border border-hp-border p-5 shadow-xs">
+        <h3 className="text-sm font-bold text-hp-body mb-4">
+          Claims Aging Analysis
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {Object.entries(agingBuckets).map(([label, count]) => {
+            const isAlert = label === "15-30d" || label === "30d+";
+            return (
+              <div
+                key={label}
+                className={cn(
+                  "rounded-lg border p-3 text-center",
+                  label === "0-7d"
+                    ? "bg-green-50 border-green-200"
+                    : label === "8-14d"
+                      ? "bg-amber-50 border-amber-200"
+                      : label === "15-30d"
+                        ? "bg-orange-50 border-orange-200"
+                        : "bg-red-50 border-red-200",
+                )}
+              >
+                <p
+                  className={cn(
+                    "text-xl font-bold",
+                    label === "0-7d"
+                      ? "text-green-700"
+                      : label === "8-14d"
+                        ? "text-amber-700"
+                        : label === "15-30d"
+                          ? "text-orange-700"
+                          : "text-red-700",
+                  )}
+                >
+                  {count}
+                </p>
+                <p className="text-[10px] font-semibold text-hp-muted mt-0.5">
+                  {label}
+                </p>
+                {isAlert && count > 0 && (
+                  <AlertCircle className="h-3 w-3 mx-auto mt-1 text-red-400" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Recent 5 Claims */}
       <div className="bg-white rounded-xl border border-hp-border p-5 shadow-xs">
         <h3 className="text-sm font-bold text-hp-body mb-3">Recent Claims</h3>
@@ -1376,9 +1955,12 @@ function ClaimsDashboard({ claims }: { claims: ClaimRecord[] }) {
                 className="flex items-center justify-between gap-3 py-2.5 border-b border-hp-border last:border-0"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-hp-body truncate">
-                    {c.patientName}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-semibold text-hp-body truncate">
+                      {c.patientName}
+                    </p>
+                    <DaysSinceBadge createdAt={c.createdAt} />
+                  </div>
                   <p className="text-xs text-hp-muted">
                     {c.id} · {c.packageCode}
                   </p>
@@ -1453,6 +2035,12 @@ export function ClaimsModule({
 
   const settledCount = claims.filter((c) => c.status === "Settled").length;
   const rejectedCount = claims.filter((c) => c.status === "Rejected").length;
+  const delayedCount = claims.filter(
+    (c) =>
+      c.status !== "Settled" &&
+      c.status !== "Rejected" &&
+      daysFromNow(c.createdAt) > 7,
+  ).length;
 
   return (
     <motion.main
@@ -1479,10 +2067,16 @@ export function ClaimsModule({
               </span>
             </div>
             <p className="text-white/70 text-xs mt-0.5">
-              End-to-end claims management · ABDM + NABH Ready
+              End-to-end claims management · Visual timeline · ABDM + NABH Ready
             </p>
           </div>
           <div className="ml-auto hidden sm:flex items-center gap-3">
+            {delayedCount > 0 && (
+              <div className="flex items-center gap-1.5 bg-amber-500/20 border border-amber-400/30 text-amber-200 text-xs rounded-lg px-3 py-1.5">
+                <Clock className="h-3.5 w-3.5" />
+                {delayedCount} delayed
+              </div>
+            )}
             {rejectedCount > 0 && (
               <div className="flex items-center gap-1.5 bg-red-500/20 border border-red-400/30 text-red-200 text-xs rounded-lg px-3 py-1.5">
                 <AlertCircle className="h-3.5 w-3.5" />

@@ -1,6 +1,7 @@
 import type {
   DocChecklistItem,
   backendInterface as FullBackendInterface,
+  IcdMaster,
   Patient,
   PreAuthRecord,
   PreAuthRequest,
@@ -30,12 +31,14 @@ import {
   ChevronUp,
   Clock,
   FileCheck,
+  Info,
   Loader2,
   MessageSquare,
   Plus,
   RefreshCw,
   Search,
   Send,
+  ShieldCheck,
   XCircle,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -54,6 +57,20 @@ interface DoctorMaster {
   isActive: boolean;
   phone: string;
   email: string;
+}
+
+type IcdValidationStatus = "valid" | "not-found" | "inactive" | "unchecked";
+
+interface IcdValidationResult {
+  status: IcdValidationStatus;
+  description?: string;
+  category?: string;
+}
+
+interface PackageValidationResult {
+  code: string;
+  name: string;
+  isValid: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -209,6 +226,159 @@ function TatIcon({
     return <AlertTriangle className="h-4 w-4 text-red-500" />;
   if (status === "warning") return <Clock className="h-4 w-4 text-amber-500" />;
   return <Clock className="h-4 w-4 text-green-500" />;
+}
+
+// ---------------------------------------------------------------------------
+// ICD Validation Badge
+// ---------------------------------------------------------------------------
+
+function IcdValidationBadge({
+  status,
+  description,
+}: {
+  status: IcdValidationStatus;
+  description?: string;
+}) {
+  if (status === "unchecked") return null;
+
+  const config = {
+    valid: {
+      icon: <CheckCircle2 className="h-3 w-3" />,
+      label: "Valid",
+      cls: "bg-green-100 text-green-700 border-green-200",
+    },
+    "not-found": {
+      icon: <AlertTriangle className="h-3 w-3" />,
+      label: "Not in Masters",
+      cls: "bg-amber-100 text-amber-700 border-amber-200",
+    },
+    inactive: {
+      icon: <XCircle className="h-3 w-3" />,
+      label: "Inactive",
+      cls: "bg-red-100 text-red-700 border-red-200",
+    },
+  };
+
+  const c = config[status];
+
+  return (
+    <span
+      title={description || ""}
+      className={cn(
+        "inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded border ml-1.5 cursor-help",
+        c.cls,
+      )}
+    >
+      {c.icon}
+      {c.label}
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Validation Summary Banner
+// ---------------------------------------------------------------------------
+
+function ValidationSummary({
+  icdValidation,
+  packageValidations,
+  diagnosisText,
+}: {
+  icdValidation: IcdValidationResult;
+  packageValidations: PackageValidationResult[];
+  diagnosisText: string;
+}) {
+  if (!diagnosisText.trim() && packageValidations.length === 0) return null;
+
+  const icdChecked = icdValidation.status !== "unchecked";
+  const icdValid = icdValidation.status === "valid";
+  const icdInactive = icdValidation.status === "inactive";
+  const icdNotFound = icdValidation.status === "not-found";
+  const invalidPkgs = packageValidations.filter((p) => !p.isValid);
+
+  const hasWarnings = icdNotFound || icdInactive || invalidPkgs.length > 0;
+
+  if (!icdChecked && packageValidations.length === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={cn(
+        "rounded-xl border px-4 py-3 text-sm space-y-1.5",
+        icdInactive
+          ? "bg-red-50 border-red-200"
+          : hasWarnings
+            ? "bg-amber-50 border-amber-200"
+            : "bg-green-50 border-green-200",
+      )}
+      data-ocid="preauth.validation_summary"
+    >
+      <div className="flex items-center gap-2 font-semibold text-xs uppercase tracking-wide text-gray-500 mb-1">
+        <ShieldCheck className="h-3.5 w-3.5" />
+        Validation Summary
+      </div>
+
+      {icdChecked && (
+        <div className="flex items-center gap-2 text-xs">
+          {icdValid && (
+            <>
+              <CheckCircle2 className="h-3.5 w-3.5 text-green-600 shrink-0" />
+              <span className="text-green-700">
+                ICD-10 code validated ✓
+                {icdValidation.description && (
+                  <span className="text-green-600 font-normal ml-1">
+                    — {icdValidation.description}
+                  </span>
+                )}
+              </span>
+            </>
+          )}
+          {icdNotFound && (
+            <>
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+              <span className="text-amber-700">
+                ⚠ Diagnosis not found in Masters — verify ICD-10 code before
+                submission
+              </span>
+            </>
+          )}
+          {icdInactive && (
+            <>
+              <XCircle className="h-3.5 w-3.5 text-red-600 shrink-0" />
+              <span className="text-red-700 font-medium">
+                ✗ ICD-10 code is marked <strong>Inactive</strong> in Masters —
+                please verify before submitting
+              </span>
+            </>
+          )}
+        </div>
+      )}
+
+      {packageValidations.length > 0 && (
+        <div className="flex items-center gap-2 text-xs">
+          {invalidPkgs.length === 0 ? (
+            <>
+              <CheckCircle2 className="h-3.5 w-3.5 text-green-600 shrink-0" />
+              <span className="text-green-700">
+                All selected packages validated ✓
+              </span>
+            </>
+          ) : (
+            <>
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+              <span className="text-amber-700">
+                ⚠ {invalidPkgs.length} package
+                {invalidPkgs.length > 1 ? "s" : ""} (
+                {invalidPkgs.map((p) => p.code).join(", ")}) not in standard
+                list
+              </span>
+            </>
+          )}
+        </div>
+      )}
+    </motion.div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -964,11 +1134,13 @@ function NewPreAuthForm({
   onSuccess,
   prefill,
   onPrefillConsumed,
+  icdMasters,
 }: {
   actor: FullBackendInterface | null;
   onSuccess: () => void;
   prefill?: Record<string, unknown>;
   onPrefillConsumed?: () => void;
+  icdMasters: IcdMaster[];
 }) {
   const [form, setForm] = useState<PreAuthFormState>(EMPTY_PREAUTH_FORM);
   const [errors, setErrors] = useState<
@@ -989,6 +1161,19 @@ function NewPreAuthForm({
   const [doctors, setDoctors] = useState<DoctorMaster[]>([]);
   const [attendingDoctor, setAttendingDoctor] = useState("");
   const prefillConsumed = useRef(false);
+
+  // ICD Validation state
+  const [icdValidation, setIcdValidation] = useState<IcdValidationResult>({
+    status: "unchecked",
+  });
+  const [showIcdDropdown, setShowIcdDropdown] = useState(false);
+  const [icdDropdownResults, setIcdDropdownResults] = useState<IcdMaster[]>([]);
+  const icdDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Package validation state
+  const [packageValidations, setPackageValidations] = useState<
+    PackageValidationResult[]
+  >([]);
 
   // Load doctors from masters
   useEffect(() => {
@@ -1038,18 +1223,131 @@ function NewPreAuthForm({
     }
   }, [prefill, onPrefillConsumed]);
 
+  // Click-outside for ICD dropdown
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        icdDropdownRef.current &&
+        !icdDropdownRef.current.contains(e.target as Node)
+      ) {
+        setShowIcdDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Real-time ICD validation as user types diagnosis
+  useEffect(() => {
+    const text = form.diagnosisName.trim();
+    if (!text || icdMasters.length === 0) {
+      setIcdValidation({ status: "unchecked" });
+      setIcdDropdownResults([]);
+      setShowIcdDropdown(false);
+      return;
+    }
+
+    const upper = text.toUpperCase();
+    const lower = text.toLowerCase();
+
+    // First try exact code match
+    const exactMatch = icdMasters.find(
+      (icd) => icd.code.toUpperCase() === upper,
+    );
+    if (exactMatch) {
+      setIcdValidation({
+        status: exactMatch.isActive ? "valid" : "inactive",
+        description: exactMatch.description,
+        category: exactMatch.category,
+      });
+      setShowIcdDropdown(false);
+      return;
+    }
+
+    // Then try description substring match for autocomplete
+    const matches = icdMasters
+      .filter(
+        (icd) =>
+          icd.description.toLowerCase().includes(lower) ||
+          icd.code.toLowerCase().includes(lower),
+      )
+      .slice(0, 8);
+
+    setIcdDropdownResults(matches);
+    setShowIcdDropdown(matches.length > 0 && text.length >= 2);
+
+    // If no match at all, mark not-found only when text looks like a code (short, no spaces)
+    if (text.length >= 3 && !text.includes(" ") && matches.length === 0) {
+      setIcdValidation({ status: "not-found" });
+    } else {
+      setIcdValidation({ status: "unchecked" });
+    }
+  }, [form.diagnosisName, icdMasters]);
+
+  // Package code validation
+  useEffect(() => {
+    const code = form.packageCode.trim();
+    const name = form.packageName.trim();
+    if (!code && !name) {
+      setPackageValidations([]);
+      return;
+    }
+    if (!code) return;
+
+    // Check against standard DIAGNOSIS_SUGGESTIONS package codes
+    const knownCodes = new Set(DIAGNOSIS_SUGGESTIONS.map((d) => d.code));
+    const isValid = knownCodes.has(code);
+    setPackageValidations([{ code, name, isValid }]);
+  }, [form.packageCode, form.packageName]);
+
   const set = (field: keyof PreAuthFormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
-  // Diagnosis suggestions
+  // Diagnosis suggestions based on keyword
   const diagSuggestions =
     form.diagnosisName.trim().length >= 2
       ? DIAGNOSIS_SUGGESTIONS.filter((d) =>
           d.keyword.includes(form.diagnosisName.trim().toLowerCase()),
         )
       : [];
+
+  // Suggested ICD-10 codes from Masters based on typed diagnosis
+  const suggestedIcds =
+    form.diagnosisName.trim().length >= 2 && !showIcdDropdown
+      ? icdMasters
+          .filter(
+            (icd) =>
+              icd.isActive &&
+              (icd.description
+                .toLowerCase()
+                .includes(form.diagnosisName.trim().toLowerCase()) ||
+                icd.category
+                  .toLowerCase()
+                  .includes(form.diagnosisName.trim().toLowerCase())),
+          )
+          .slice(0, 5)
+      : [];
+
+  function selectIcdFromDropdown(icd: IcdMaster) {
+    setForm((prev) => ({ ...prev, diagnosisName: icd.code }));
+    setIcdValidation({
+      status: icd.isActive ? "valid" : "inactive",
+      description: icd.description,
+      category: icd.category,
+    });
+    setShowIcdDropdown(false);
+  }
+
+  function applySuggestedIcd(icd: IcdMaster) {
+    setForm((prev) => ({ ...prev, diagnosisName: icd.code }));
+    setIcdValidation({
+      status: icd.isActive ? "valid" : "inactive",
+      description: icd.description,
+      category: icd.category,
+    });
+  }
 
   function selectPatient(p: Patient) {
     setForm((prev) => ({
@@ -1169,6 +1467,8 @@ function NewPreAuthForm({
         toast.success(`Pre-Auth created: ${result.ok}`);
         setForm(EMPTY_PREAUTH_FORM);
         setPatientFound(false);
+        setIcdValidation({ status: "unchecked" });
+        setPackageValidations([]);
         onSuccess();
       } else {
         toast.error(`Error: ${result.err}`);
@@ -1181,6 +1481,7 @@ function NewPreAuthForm({
   }
 
   const submittedCount = form.checklist.filter((d) => d.submitted).length;
+  const hasInactiveIcd = icdValidation.status === "inactive";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -1281,20 +1582,136 @@ function NewPreAuthForm({
         icon={<FileCheck className="h-4 w-4" />}
       >
         <div className="space-y-4">
-          <FieldRow label="Diagnosis Name" required>
-            <Input
-              data-ocid="preauth.diagnosis.input"
-              placeholder="e.g. Appendicitis, Cataract"
-              value={form.diagnosisName}
-              onChange={(e) => set("diagnosisName", e.target.value)}
-              className={cn(
-                "text-sm",
-                errors.diagnosisName && "border-red-400",
-              )}
-            />
+          {/* Diagnosis / ICD-10 Input */}
+          <FieldRow label="Diagnosis / ICD-10 Code" required>
+            <div ref={icdDropdownRef} className="relative">
+              <div className="relative">
+                <Input
+                  data-ocid="preauth.diagnosis.input"
+                  placeholder="e.g. Appendicitis, K37, Cataract…"
+                  value={form.diagnosisName}
+                  onChange={(e) => set("diagnosisName", e.target.value)}
+                  onFocus={() => {
+                    if (icdDropdownResults.length > 0) setShowIcdDropdown(true);
+                  }}
+                  className={cn(
+                    "text-sm pr-24",
+                    errors.diagnosisName && "border-red-400",
+                    icdValidation.status === "valid" &&
+                      "border-green-400 bg-green-50/30",
+                    icdValidation.status === "inactive" &&
+                      "border-red-400 bg-red-50/30",
+                    icdValidation.status === "not-found" &&
+                      "border-amber-400 bg-amber-50/30",
+                  )}
+                  autoComplete="off"
+                />
+                {/* Inline validation badge inside input */}
+                {icdValidation.status !== "unchecked" && (
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <IcdValidationBadge
+                      status={icdValidation.status}
+                      description={icdValidation.description}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* ICD-10 Autocomplete Dropdown */}
+              <AnimatePresence>
+                {showIcdDropdown && icdDropdownResults.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full left-0 right-0 mt-1 z-50 bg-white border border-border rounded-lg shadow-lg overflow-hidden"
+                    data-ocid="preauth.icd_dropdown"
+                  >
+                    <div className="px-3 py-1.5 border-b border-border/50 bg-muted/30">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                        <Info className="h-3 w-3" />
+                        ICD-10 Masters — select to validate
+                      </span>
+                    </div>
+                    {icdDropdownResults.map((icd) => (
+                      <button
+                        key={icd.id}
+                        type="button"
+                        data-ocid="preauth.icd_dropdown.item"
+                        onClick={() => selectIcdFromDropdown(icd)}
+                        className="w-full text-left px-4 py-2 hover:bg-muted/60 transition-colors flex items-center justify-between gap-3 border-b last:border-b-0 border-border/40"
+                      >
+                        <span className="flex items-center gap-2 min-w-0">
+                          <span className="font-mono text-xs font-bold text-hp-blue shrink-0">
+                            {icd.code}
+                          </span>
+                          <span className="text-xs text-foreground truncate">
+                            {icd.description}
+                          </span>
+                        </span>
+                        <span className="flex items-center gap-1.5 shrink-0">
+                          <span className="text-[10px] text-muted-foreground">
+                            {icd.category}
+                          </span>
+                          {icd.isActive ? (
+                            <span className="text-[10px] text-green-600 font-semibold">
+                              Active
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-red-500 font-semibold">
+                              Inactive
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             {errors.diagnosisName && (
               <p className="text-xs text-red-500">{errors.diagnosisName}</p>
             )}
+
+            {/* Suggested ICD-10 from Masters */}
+            {suggestedIcds.length > 0 && (
+              <div className="mt-2 space-y-1">
+                <p className="text-[11px] text-hp-muted font-semibold uppercase tracking-wide flex items-center gap-1">
+                  <ShieldCheck className="h-3 w-3" />
+                  Suggested ICD-10 Codes from Masters
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {suggestedIcds.map((icd) => (
+                    <button
+                      key={icd.id}
+                      type="button"
+                      data-ocid="preauth.icd_suggestion.button"
+                      onClick={() => applySuggestedIcd(icd)}
+                      title={icd.description}
+                      className={cn(
+                        "inline-flex items-center gap-1 text-[11px] rounded-full px-2.5 py-1 border font-medium transition-colors",
+                        icd.isActive
+                          ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                          : "bg-red-50 border-red-200 text-red-600 hover:bg-red-100",
+                      )}
+                    >
+                      <span className="font-mono font-bold">{icd.code}</span>
+                      <span className="truncate max-w-[160px]">
+                        — {icd.description}
+                      </span>
+                      {!icd.isActive && (
+                        <span className="text-[9px] bg-red-200 text-red-700 rounded px-1">
+                          INACTIVE
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Package Suggestions */}
             {diagSuggestions.length > 0 && (
               <div className="mt-2 space-y-1">
@@ -1318,18 +1735,37 @@ function NewPreAuthForm({
               </div>
             )}
           </FieldRow>
+
           <div className="grid sm:grid-cols-2 gap-4">
             <FieldRow label="Package Code" required>
-              <Input
-                data-ocid="preauth.package_code.input"
-                placeholder="e.g. SUR001"
-                value={form.packageCode}
-                onChange={(e) => set("packageCode", e.target.value)}
-                className={cn(
-                  "text-sm font-mono",
-                  errors.packageCode && "border-red-400",
+              <div className="relative">
+                <Input
+                  data-ocid="preauth.package_code.input"
+                  placeholder="e.g. SUR001"
+                  value={form.packageCode}
+                  onChange={(e) => set("packageCode", e.target.value)}
+                  className={cn(
+                    "text-sm font-mono",
+                    errors.packageCode && "border-red-400",
+                  )}
+                />
+                {/* Package validation badge */}
+                {packageValidations.length > 0 && (
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                    {packageValidations[0].isValid ? (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-green-100 text-green-700 border border-green-200 px-1.5 py-0.5 rounded">
+                        <CheckCircle2 className="h-2.5 w-2.5" />
+                        Valid
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded">
+                        <AlertTriangle className="h-2.5 w-2.5" />
+                        Not in DB
+                      </span>
+                    )}
+                  </div>
                 )}
-              />
+              </div>
               {errors.packageCode && (
                 <p className="text-xs text-red-500">{errors.packageCode}</p>
               )}
@@ -1525,6 +1961,32 @@ function NewPreAuthForm({
         </div>
       </SectionCard>
 
+      {/* Validation Summary — shown before submit */}
+      <ValidationSummary
+        icdValidation={icdValidation}
+        packageValidations={packageValidations}
+        diagnosisText={form.diagnosisName}
+      />
+
+      {/* Inactive ICD warning banner */}
+      {hasInactiveIcd && (
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700"
+          data-ocid="preauth.inactive_icd.warning"
+        >
+          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-red-500" />
+          <div>
+            <span className="font-semibold">
+              ICD-10 code marked Inactive in Masters.
+            </span>{" "}
+            Submission is still allowed, but please verify the code with your
+            clinical team before finalising.
+          </div>
+        </motion.div>
+      )}
+
       {/* Submit */}
       <div className="flex justify-end pt-2">
         <Button
@@ -1569,6 +2031,23 @@ export function PreAuthModule({
   const [activeTab, setActiveTab] = useState("new");
   const [records, setRecords] = useState<PreAuthRecord[]>([]);
   const [isLoadingRecords, setIsLoadingRecords] = useState(false);
+  const [icdMasters, setIcdMasters] = useState<IcdMaster[]>([]);
+
+  // Load ICD masters once on mount
+  useEffect(() => {
+    async function loadIcds() {
+      if (!typedActor) return;
+      try {
+        const icds = await typedActor.getIcds();
+        setIcdMasters(icds);
+      } catch {
+        // silently fail — validation just won't work
+      }
+    }
+    if (typedActor && !isFetching) {
+      loadIcds();
+    }
+  }, [typedActor, isFetching]);
 
   const loadRecords = useCallback(async () => {
     if (!typedActor) return;
@@ -1634,6 +2113,12 @@ export function PreAuthModule({
             </p>
           </div>
           <div className="ml-auto hidden sm:flex items-center gap-3">
+            {icdMasters.length > 0 && (
+              <div className="flex items-center gap-1.5 bg-green-500/20 border border-green-400/30 text-green-200 text-xs rounded-lg px-3 py-1.5">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                {icdMasters.length} ICD-10 codes loaded
+              </div>
+            )}
             {breachedCount > 0 && (
               <div className="flex items-center gap-1.5 bg-red-500/20 border border-red-400/30 text-red-200 text-xs rounded-lg px-3 py-1.5">
                 <AlertTriangle className="h-3.5 w-3.5" />
@@ -1692,6 +2177,7 @@ export function PreAuthModule({
               onSuccess={handleNewPreAuthSuccess}
               prefill={prefill}
               onPrefillConsumed={onPrefillConsumed}
+              icdMasters={icdMasters}
             />
           </TabsContent>
 

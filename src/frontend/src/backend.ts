@@ -89,360 +89,1566 @@ export class ExternalBlob {
         return this;
     }
 }
-export interface _CaffeineStorageCreateCertificateResult {
-    method: string;
-    blob_hash: string;
+export interface AppealInput {
+    status: string;
+    appealReason: string;
+    patientId: string;
+    claimId: string;
+    denialId: string;
+    notes: string;
 }
-export interface _CaffeineStorageRefillResult {
-    success?: boolean;
-    topped_up_amount?: bigint;
+export interface RCMStats {
+    avgResolutionDays: number;
+    denialRate: number;
+    totalAR: number;
+    pendingPreAuths: bigint;
+    approvalRate: number;
+    totalPaidValue: number;
+    claimsByStatus: Array<[string, bigint]>;
+    totalClaimsValue: number;
 }
-export interface _CaffeineStorageRefillInformation {
-    proposed_top_up_amount?: bigint;
+export type ClinicalDocResult = {
+    __kind__: "ok";
+    ok: string;
+} | {
+    __kind__: "err";
+    err: string;
+};
+export interface PaymentRecord {
+    id: string;
+    transactionRef: string;
+    reconciledAt: bigint;
+    patientId: string;
+    createdAt: bigint;
+    claimId: string;
+    settlementStatus: string;
+    updatedAt: bigint;
+    paymentDate: string;
+    patientName: string;
+    paymentMode: string;
+    discrepancyRemarks: string;
+    paidAmount: string;
+    payerName: string;
+    approvedAmount: string;
+    billedAmount: string;
 }
-export enum UserRole {
-    admin = "admin",
-    user = "user",
-    guest = "guest"
+export interface DoctorMasterRequest {
+    name: string;
+    registrationNumber: string;
+    isActive: boolean;
+    email: string;
+    phone: string;
+    department: string;
+    specialisation: string;
+}
+export interface TpaMasterRequest {
+    code: string;
+    name: string;
+    contactPerson: string;
+    isActive: boolean;
+    email: string;
+    tpaType: string;
+    phone: string;
+}
+export interface WardMaster {
+    id: string;
+    name: string;
+    createdAt: bigint;
+    ratePerDay: string;
+    totalBeds: bigint;
+    isActive: boolean;
+    updatedAt: bigint;
+    wardType: string;
+}
+export interface DocChecklistItem {
+    submitted: boolean;
+    required: boolean;
+    docName: string;
+}
+export type ClaimResult = {
+    __kind__: "ok";
+    ok: string;
+} | {
+    __kind__: "err";
+    err: string;
+};
+export interface TpaMaster {
+    id: string;
+    code: string;
+    name: string;
+    createdAt: bigint;
+    contactPerson: string;
+    isActive: boolean;
+    email: string;
+    updatedAt: bigint;
+    tpaType: string;
+    phone: string;
+}
+export interface Patient {
+    id: string;
+    dob: string;
+    documents: Array<DocumentRef>;
+    eligibilityStatus: string;
+    name: string;
+    createdAt: bigint;
+    createdBy: string;
+    eligibilityCheckedAt: bigint;
+    abhaId: string;
+    address: string;
+    gender: string;
+    phone: string;
+    policyStart: string;
+    payerName: string;
+    payerType: string;
+    policyNumber: string;
+    policyEnd: string;
+}
+export interface DoctorMaster {
+    id: string;
+    name: string;
+    createdAt: bigint;
+    registrationNumber: string;
+    isActive: boolean;
+    email: string;
+    updatedAt: bigint;
+    phone: string;
+    department: string;
+    specialisation: string;
+}
+export type RegisterResult = {
+    __kind__: "ok";
+    ok: string;
+} | {
+    __kind__: "err";
+    err: string;
+};
+export interface DocumentRef {
+    documentId: string;
+    docType: string;
+}
+export interface RegisterRequest {
+    dob: string;
+    name: string;
+    abhaId: string;
+    address: string;
+    gender: string;
+    phone: string;
+    policyStart: string;
+    payerName: string;
+    payerType: string;
+    policyNumber: string;
+    policyEnd: string;
+}
+export interface IcdMaster {
+    id: string;
+    code: string;
+    createdAt: bigint;
+    description: string;
+    isActive: boolean;
+    updatedAt: bigint;
+    category: string;
+}
+export type PreAuthResult = {
+    __kind__: "ok";
+    ok: string;
+} | {
+    __kind__: "err";
+    err: string;
+};
+export interface ClaimRecord {
+    id: string;
+    procedureDetails: string;
+    packageName: string;
+    status: string;
+    rejectionRemarks: string;
+    timelineEvents: Array<ClaimTimelineEvent>;
+    settlementDate: string;
+    patientId: string;
+    admissionDate: string;
+    createdAt: bigint;
+    icdCode: string;
+    claimType: string;
+    updatedAt: bigint;
+    schemeType: string;
+    documentChecklist: Array<DocChecklistItem>;
+    patientName: string;
+    preAuthId: string;
+    payerName: string;
+    dischargeDate: string;
+    approvedAmount: string;
+    diagnosisName: string;
+    billedAmount: string;
+    packageCode: string;
+}
+export interface IcdMasterRequest {
+    code: string;
+    description: string;
+    isActive: boolean;
+    category: string;
+}
+export interface WardMasterRequest {
+    name: string;
+    ratePerDay: string;
+    totalBeds: bigint;
+    isActive: boolean;
+    wardType: string;
+}
+export type PaymentResult = {
+    __kind__: "ok";
+    ok: string;
+} | {
+    __kind__: "err";
+    err: string;
+};
+export interface ClaimTimelineEvent {
+    stage: string;
+    notes: string;
+    timestamp: bigint;
+}
+export interface PreAuthRequest {
+    packageName: string;
+    patientId: string;
+    schemeType: string;
+    documentChecklist: Array<DocChecklistItem>;
+    requestedAmount: string;
+    patientName: string;
+    payerName: string;
+    expectedTATHours: bigint;
+    diagnosisName: string;
+    packageCode: string;
+}
+export interface Appeal {
+    id: string;
+    status: string;
+    appealReason: string;
+    patientId: string;
+    createdAt: bigint;
+    submittedAt?: bigint;
+    claimId: string;
+    denialId: string;
+    notes: string;
+    resolvedAt?: bigint;
+}
+export interface QueryMessage {
+    fromTPA: boolean;
+    message: string;
+    timestamp: bigint;
+}
+export type MasterResult = {
+    __kind__: "ok";
+    ok: string;
+} | {
+    __kind__: "err";
+    err: string;
+};
+export type DenialResult = {
+    __kind__: "ok";
+    ok: string;
+} | {
+    __kind__: "err";
+    err: string;
+};
+export interface DenialRecord {
+    id: string;
+    packageName: string;
+    status: string;
+    alertSent: boolean;
+    rejectionRemarks: string;
+    patientId: string;
+    createdAt: bigint;
+    resubmittedAt: bigint;
+    claimId: string;
+    rootCauseNotes: string;
+    updatedAt: bigint;
+    schemeType: string;
+    rejectionCategory: string;
+    patientName: string;
+    payerName: string;
+    resolvedAt: bigint;
+    packageCode: string;
+}
+export interface DenialRequest {
+    packageName: string;
+    rejectionRemarks: string;
+    patientId: string;
+    claimId: string;
+    rootCauseNotes: string;
+    schemeType: string;
+    rejectionCategory: string;
+    patientName: string;
+    payerName: string;
+    packageCode: string;
+}
+export interface ClinicalDocRequest {
+    doctorNotes: string;
+    packageNames: Array<string>;
+    patientId: string;
+    dischargeSummary: string;
+    documentChecklist: Array<ClinicalDocChecklistItem>;
+    patientName: string;
+    packageCodes: Array<string>;
+}
+export interface ClinicalDocRecord {
+    id: string;
+    doctorNotes: string;
+    status: string;
+    packageNames: Array<string>;
+    patientId: string;
+    dischargeSummary: string;
+    createdAt: bigint;
+    updatedAt: bigint;
+    documentChecklist: Array<ClinicalDocChecklistItem>;
+    patientName: string;
+    packageCodes: Array<string>;
+}
+export interface ClinicalDocChecklistItem {
+    submitted: boolean;
+    required: boolean;
+    docName: string;
+    docType: string;
+    packageCode: string;
+}
+export interface HospitalMasterRequest {
+    nabhNumber: string;
+    code: string;
+    name: string;
+    contactPerson: string;
+    isActive: boolean;
+    email: string;
+    address: string;
+    phone: string;
+    rohiniId: string;
+}
+export interface PreAuthRecord {
+    id: string;
+    packageName: string;
+    status: string;
+    patientId: string;
+    submittedAt: bigint;
+    updatedAt: bigint;
+    schemeType: string;
+    documentChecklist: Array<DocChecklistItem>;
+    queries: Array<QueryMessage>;
+    requestedAmount: string;
+    patientName: string;
+    payerName: string;
+    expectedTATHours: bigint;
+    remarks: string;
+    diagnosisName: string;
+    packageCode: string;
+}
+export interface PaymentRequest {
+    transactionRef: string;
+    patientId: string;
+    claimId: string;
+    paymentDate: string;
+    patientName: string;
+    paymentMode: string;
+    discrepancyRemarks: string;
+    paidAmount: string;
+    payerName: string;
+    approvedAmount: string;
+    billedAmount: string;
+}
+export interface ClaimRequest {
+    procedureDetails: string;
+    packageName: string;
+    patientId: string;
+    admissionDate: string;
+    icdCode: string;
+    claimType: string;
+    schemeType: string;
+    documentChecklist: Array<DocChecklistItem>;
+    patientName: string;
+    preAuthId: string;
+    payerName: string;
+    dischargeDate: string;
+    approvedAmount: string;
+    diagnosisName: string;
+    billedAmount: string;
+    packageCode: string;
+}
+export type AppealResult = {
+    __kind__: "ok";
+    ok: Appeal;
+} | {
+    __kind__: "err";
+    err: string;
+};
+export interface HospitalMaster {
+    id: string;
+    nabhNumber: string;
+    code: string;
+    name: string;
+    createdAt: bigint;
+    contactPerson: string;
+    isActive: boolean;
+    email: string;
+    updatedAt: bigint;
+    address: string;
+    phone: string;
+    rohiniId: string;
+}
+export interface AgingAR {
+    bucket61to90: Array<ClaimRecord>;
+    bucket91plus: Array<ClaimRecord>;
+    totalOutstanding: number;
+    bucket0to30: Array<ClaimRecord>;
+    bucket31to60: Array<ClaimRecord>;
 }
 export interface backendInterface {
-    _caffeineStorageBlobIsLive(hash: Uint8Array): Promise<boolean>;
-    _caffeineStorageBlobsToDelete(): Promise<Array<Uint8Array>>;
-    _caffeineStorageConfirmBlobDeletion(blobs: Array<Uint8Array>): Promise<void>;
-    _caffeineStorageCreateCertificate(blobHash: string): Promise<_CaffeineStorageCreateCertificateResult>;
-    _caffeineStorageRefillCashier(refillInformation: _CaffeineStorageRefillInformation | null): Promise<_CaffeineStorageRefillResult>;
-    _caffeineStorageUpdateGatewayPrincipals(): Promise<void>;
-    _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
-    assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
-    getCallerUserRole(): Promise<UserRole>;
-    isCallerAdmin(): Promise<boolean>;
-    // Patient
-    registerPatient(req: import('./backend.d').RegisterRequest): Promise<import('./backend.d').RegisterResult>;
-    getPatients(): Promise<Array<import('./backend.d').Patient>>;
-    getPatientById(id: string): Promise<[] | [import('./backend.d').Patient]>;
-    getPatientByAbhaId(abhaId: string): Promise<[] | [import('./backend.d').Patient]>;
-    searchPatients(searchTerm: string): Promise<Array<import('./backend.d').Patient>>;
-    updateEligibility(id: string, status: string): Promise<boolean>;
     addDocument(patientId: string, documentId: string, docType: string): Promise<boolean>;
-    getPatientsByStatus(status: string): Promise<Array<import('./backend.d').Patient>>;
-    // Pre-Auth
-    createPreAuth(req: import('./backend.d').PreAuthRequest): Promise<import('./backend.d').PreAuthResult>;
-    getPreAuths(): Promise<Array<import('./backend.d').PreAuthRecord>>;
-    getPreAuthById(id: string): Promise<[] | [import('./backend.d').PreAuthRecord]>;
-    getPreAuthsByPatient(patientId: string): Promise<Array<import('./backend.d').PreAuthRecord>>;
-    updatePreAuthStatus(id: string, status: string, remarks: string): Promise<boolean>;
     addQueryResponse(id: string, message: string, fromTPA: boolean): Promise<boolean>;
-    getPreAuthsByStatus(status: string): Promise<Array<import('./backend.d').PreAuthRecord>>;
-    // Clinical Docs
-    createClinicalDoc(req: import('./backend.d').ClinicalDocRequest): Promise<import('./backend.d').ClinicalDocResult>;
-    getClinicalDocs(): Promise<Array<import('./backend.d').ClinicalDocRecord>>;
-    getClinicalDocById(id: string): Promise<[] | [import('./backend.d').ClinicalDocRecord]>;
-    getClinicalDocsByPatient(patientId: string): Promise<Array<import('./backend.d').ClinicalDocRecord>>;
-    updateClinicalDoc(id: string, doctorNotes: string, dischargeSummary: string, documentChecklist: Array<import('./backend.d').ClinicalDocChecklistItem>, status: string): Promise<boolean>;
-    getClinicalDocsByStatus(status: string): Promise<Array<import('./backend.d').ClinicalDocRecord>>;
-    // Claims
-    createClaim(req: import('./backend.d').ClaimRequest): Promise<import('./backend.d').ClaimResult>;
-    getClaims(): Promise<Array<import('./backend.d').ClaimRecord>>;
-    getClaimById(id: string): Promise<[] | [import('./backend.d').ClaimRecord]>;
-    getClaimsByPatient(patientId: string): Promise<Array<import('./backend.d').ClaimRecord>>;
-    getClaimsByPreAuth(preAuthId: string): Promise<Array<import('./backend.d').ClaimRecord>>;
-    updateClaimStatus(id: string, status: string, remarks: string): Promise<boolean>;
-    getClaimsByStatus(status: string): Promise<Array<import('./backend.d').ClaimRecord>>;
-    // Payments
-    createPayment(req: import('./backend.d').PaymentRequest): Promise<import('./backend.d').PaymentResult>;
-    getPayments(): Promise<Array<import('./backend.d').PaymentRecord>>;
-    getPaymentById(id: string): Promise<[] | [import('./backend.d').PaymentRecord]>;
-    getPaymentsByPatient(patientId: string): Promise<Array<import('./backend.d').PaymentRecord>>;
-    getPaymentsByClaimId(claimId: string): Promise<Array<import('./backend.d').PaymentRecord>>;
-    getPaymentsByStatus(status: string): Promise<Array<import('./backend.d').PaymentRecord>>;
-    updatePaymentStatus(id: string, settlementStatus: string, paidAmount: string, transactionRef: string, discrepancyRemarks: string): Promise<boolean>;
-    // Masters
-    createHospital(req: import('./backend.d').HospitalMasterRequest): Promise<import('./backend.d').MasterResult>;
-    getHospitals(): Promise<Array<import('./backend.d').HospitalMaster>>;
-    updateHospital(id: string, req: import('./backend.d').HospitalMasterRequest): Promise<boolean>;
-    deleteHospital(id: string): Promise<boolean>;
-    createDoctor(req: import('./backend.d').DoctorMasterRequest): Promise<import('./backend.d').MasterResult>;
-    getDoctors(): Promise<Array<import('./backend.d').DoctorMaster>>;
-    updateDoctor(id: string, req: import('./backend.d').DoctorMasterRequest): Promise<boolean>;
+    createAppeal(input: AppealInput): Promise<AppealResult>;
+    createClaim(req: ClaimRequest): Promise<ClaimResult>;
+    createClinicalDoc(req: ClinicalDocRequest): Promise<ClinicalDocResult>;
+    createDenial(req: DenialRequest): Promise<DenialResult>;
+    createDoctor(req: DoctorMasterRequest): Promise<MasterResult>;
+    createHospital(req: HospitalMasterRequest): Promise<MasterResult>;
+    createIcd(req: IcdMasterRequest): Promise<MasterResult>;
+    createPayment(req: PaymentRequest): Promise<PaymentResult>;
+    createPreAuth(req: PreAuthRequest): Promise<PreAuthResult>;
+    createTpa(req: TpaMasterRequest): Promise<MasterResult>;
+    createWard(req: WardMasterRequest): Promise<MasterResult>;
     deleteDoctor(id: string): Promise<boolean>;
-    createTpa(req: import('./backend.d').TpaMasterRequest): Promise<import('./backend.d').MasterResult>;
-    getTpas(): Promise<Array<import('./backend.d').TpaMaster>>;
-    updateTpa(id: string, req: import('./backend.d').TpaMasterRequest): Promise<boolean>;
-    deleteTpa(id: string): Promise<boolean>;
-    createIcd(req: import('./backend.d').IcdMasterRequest): Promise<import('./backend.d').MasterResult>;
-    getIcds(): Promise<Array<import('./backend.d').IcdMaster>>;
-    updateIcd(id: string, req: import('./backend.d').IcdMasterRequest): Promise<boolean>;
+    deleteHospital(id: string): Promise<boolean>;
     deleteIcd(id: string): Promise<boolean>;
-    createWard(req: import('./backend.d').WardMasterRequest): Promise<import('./backend.d').MasterResult>;
-    getWards(): Promise<Array<import('./backend.d').WardMaster>>;
-    updateWard(id: string, req: import('./backend.d').WardMasterRequest): Promise<boolean>;
+    deleteTpa(id: string): Promise<boolean>;
     deleteWard(id: string): Promise<boolean>;
+    getAgingAR(): Promise<AgingAR>;
+    getAppealById(id: string): Promise<Appeal | null>;
+    getAppeals(): Promise<Array<Appeal>>;
+    getAppealsByDenialId(denialId: string): Promise<Array<Appeal>>;
+    getClaimById(id: string): Promise<ClaimRecord | null>;
+    getClaims(): Promise<Array<ClaimRecord>>;
+    getClaimsByPatient(patientId: string): Promise<Array<ClaimRecord>>;
+    getClaimsByPreAuth(preAuthId: string): Promise<Array<ClaimRecord>>;
+    getClaimsByStatus(status: string): Promise<Array<ClaimRecord>>;
+    getClinicalDocById(id: string): Promise<ClinicalDocRecord | null>;
+    getClinicalDocs(): Promise<Array<ClinicalDocRecord>>;
+    getClinicalDocsByPatient(patientId: string): Promise<Array<ClinicalDocRecord>>;
+    getClinicalDocsByStatus(status: string): Promise<Array<ClinicalDocRecord>>;
+    getDenialById(id: string): Promise<DenialRecord | null>;
+    getDenials(): Promise<Array<DenialRecord>>;
+    getDenialsByClaimId(claimId: string): Promise<Array<DenialRecord>>;
+    getDenialsByStatus(status: string): Promise<Array<DenialRecord>>;
+    getDoctors(): Promise<Array<DoctorMaster>>;
+    getHospitals(): Promise<Array<HospitalMaster>>;
+    getIcds(): Promise<Array<IcdMaster>>;
+    getPatientByAbhaId(abhaId: string): Promise<Patient | null>;
+    getPatientById(id: string): Promise<Patient | null>;
+    getPatients(): Promise<Array<Patient>>;
+    getPatientsByStatus(status: string): Promise<Array<Patient>>;
+    getPaymentById(id: string): Promise<PaymentRecord | null>;
+    getPayments(): Promise<Array<PaymentRecord>>;
+    getPaymentsByClaimId(claimId: string): Promise<Array<PaymentRecord>>;
+    getPaymentsByPatient(patientId: string): Promise<Array<PaymentRecord>>;
+    getPaymentsByStatus(status: string): Promise<Array<PaymentRecord>>;
+    getPreAuthById(id: string): Promise<PreAuthRecord | null>;
+    getPreAuths(): Promise<Array<PreAuthRecord>>;
+    getPreAuthsByPatient(patientId: string): Promise<Array<PreAuthRecord>>;
+    getPreAuthsByStatus(status: string): Promise<Array<PreAuthRecord>>;
+    getRCMStats(): Promise<RCMStats>;
+    getTpas(): Promise<Array<TpaMaster>>;
+    getWards(): Promise<Array<WardMaster>>;
+    registerPatient(req: RegisterRequest): Promise<RegisterResult>;
+    searchPatients(searchTerm: string): Promise<Array<Patient>>;
+    updateAppealStatus(id: string, status: string, notes: string): Promise<AppealResult>;
+    updateClaimStatus(id: string, status: string, remarks: string): Promise<boolean>;
+    updateClinicalDoc(id: string, doctorNotes: string, dischargeSummary: string, documentChecklist: Array<ClinicalDocChecklistItem>, status: string): Promise<boolean>;
+    updateDenialStatus(id: string, status: string, rootCauseNotes: string, resubmitted: boolean): Promise<boolean>;
+    updateDoctor(id: string, req: DoctorMasterRequest): Promise<boolean>;
+    updateEligibility(id: string, status: string): Promise<boolean>;
+    updateHospital(id: string, req: HospitalMasterRequest): Promise<boolean>;
+    updateIcd(id: string, req: IcdMasterRequest): Promise<boolean>;
+    updatePaymentStatus(id: string, settlementStatus: string, paidAmount: string, transactionRef: string, discrepancyRemarks: string): Promise<boolean>;
+    updatePreAuthStatus(id: string, status: string, remarks: string): Promise<boolean>;
+    updateTpa(id: string, req: TpaMasterRequest): Promise<boolean>;
+    updateWard(id: string, req: WardMasterRequest): Promise<boolean>;
 }
-import type { UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
+import type { Appeal as _Appeal, AppealResult as _AppealResult, ClaimRecord as _ClaimRecord, ClaimResult as _ClaimResult, ClinicalDocRecord as _ClinicalDocRecord, ClinicalDocResult as _ClinicalDocResult, DenialRecord as _DenialRecord, DenialResult as _DenialResult, MasterResult as _MasterResult, Patient as _Patient, PaymentRecord as _PaymentRecord, PaymentResult as _PaymentResult, PreAuthRecord as _PreAuthRecord, PreAuthResult as _PreAuthResult, RegisterResult as _RegisterResult } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
-    async _caffeineStorageBlobIsLive(arg0: Uint8Array): Promise<boolean> {
+    async addDocument(arg0: string, arg1: string, arg2: string): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor._caffeineStorageBlobIsLive(arg0);
+                const result = await this.actor.addDocument(arg0, arg1, arg2);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor._caffeineStorageBlobIsLive(arg0);
+            const result = await this.actor.addDocument(arg0, arg1, arg2);
             return result;
         }
     }
-    async _caffeineStorageBlobsToDelete(): Promise<Array<Uint8Array>> {
+    async addQueryResponse(arg0: string, arg1: string, arg2: boolean): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor._caffeineStorageBlobsToDelete();
+                const result = await this.actor.addQueryResponse(arg0, arg1, arg2);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor._caffeineStorageBlobsToDelete();
+            const result = await this.actor.addQueryResponse(arg0, arg1, arg2);
             return result;
         }
     }
-    async _caffeineStorageConfirmBlobDeletion(arg0: Array<Uint8Array>): Promise<void> {
+    async createAppeal(arg0: AppealInput): Promise<AppealResult> {
         if (this.processError) {
             try {
-                const result = await this.actor._caffeineStorageConfirmBlobDeletion(arg0);
+                const result = await this.actor.createAppeal(arg0);
+                return from_candid_AppealResult_n1(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createAppeal(arg0);
+            return from_candid_AppealResult_n1(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async createClaim(arg0: ClaimRequest): Promise<ClaimResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createClaim(arg0);
+                return from_candid_ClaimResult_n6(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createClaim(arg0);
+            return from_candid_ClaimResult_n6(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async createClinicalDoc(arg0: ClinicalDocRequest): Promise<ClinicalDocResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createClinicalDoc(arg0);
+                return from_candid_ClinicalDocResult_n8(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createClinicalDoc(arg0);
+            return from_candid_ClinicalDocResult_n8(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async createDenial(arg0: DenialRequest): Promise<DenialResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createDenial(arg0);
+                return from_candid_DenialResult_n9(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createDenial(arg0);
+            return from_candid_DenialResult_n9(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async createDoctor(arg0: DoctorMasterRequest): Promise<MasterResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createDoctor(arg0);
+                return from_candid_MasterResult_n10(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createDoctor(arg0);
+            return from_candid_MasterResult_n10(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async createHospital(arg0: HospitalMasterRequest): Promise<MasterResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createHospital(arg0);
+                return from_candid_MasterResult_n10(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createHospital(arg0);
+            return from_candid_MasterResult_n10(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async createIcd(arg0: IcdMasterRequest): Promise<MasterResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createIcd(arg0);
+                return from_candid_MasterResult_n10(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createIcd(arg0);
+            return from_candid_MasterResult_n10(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async createPayment(arg0: PaymentRequest): Promise<PaymentResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createPayment(arg0);
+                return from_candid_PaymentResult_n11(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createPayment(arg0);
+            return from_candid_PaymentResult_n11(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async createPreAuth(arg0: PreAuthRequest): Promise<PreAuthResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createPreAuth(arg0);
+                return from_candid_PreAuthResult_n12(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createPreAuth(arg0);
+            return from_candid_PreAuthResult_n12(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async createTpa(arg0: TpaMasterRequest): Promise<MasterResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createTpa(arg0);
+                return from_candid_MasterResult_n10(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createTpa(arg0);
+            return from_candid_MasterResult_n10(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async createWard(arg0: WardMasterRequest): Promise<MasterResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createWard(arg0);
+                return from_candid_MasterResult_n10(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createWard(arg0);
+            return from_candid_MasterResult_n10(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async deleteDoctor(arg0: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteDoctor(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor._caffeineStorageConfirmBlobDeletion(arg0);
+            const result = await this.actor.deleteDoctor(arg0);
             return result;
         }
     }
-    async _caffeineStorageCreateCertificate(arg0: string): Promise<_CaffeineStorageCreateCertificateResult> {
+    async deleteHospital(arg0: string): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor._caffeineStorageCreateCertificate(arg0);
+                const result = await this.actor.deleteHospital(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor._caffeineStorageCreateCertificate(arg0);
+            const result = await this.actor.deleteHospital(arg0);
             return result;
         }
     }
-    async _caffeineStorageRefillCashier(arg0: _CaffeineStorageRefillInformation | null): Promise<_CaffeineStorageRefillResult> {
+    async deleteIcd(arg0: string): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor._caffeineStorageRefillCashier(to_candid_opt_n1(this._uploadFile, this._downloadFile, arg0));
-                return from_candid__CaffeineStorageRefillResult_n4(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor._caffeineStorageRefillCashier(to_candid_opt_n1(this._uploadFile, this._downloadFile, arg0));
-            return from_candid__CaffeineStorageRefillResult_n4(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async _caffeineStorageUpdateGatewayPrincipals(): Promise<void> {
-        if (this.processError) {
-            try {
-                const result = await this.actor._caffeineStorageUpdateGatewayPrincipals();
+                const result = await this.actor.deleteIcd(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor._caffeineStorageUpdateGatewayPrincipals();
+            const result = await this.actor.deleteIcd(arg0);
             return result;
         }
     }
-    async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
+    async deleteTpa(arg0: string): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor._initializeAccessControlWithSecret(arg0);
+                const result = await this.actor.deleteTpa(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor._initializeAccessControlWithSecret(arg0);
+            const result = await this.actor.deleteTpa(arg0);
             return result;
         }
     }
-    async assignCallerUserRole(arg0: Principal, arg1: UserRole): Promise<void> {
+    async deleteWard(arg0: string): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n8(this._uploadFile, this._downloadFile, arg1));
+                const result = await this.actor.deleteWard(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n8(this._uploadFile, this._downloadFile, arg1));
+            const result = await this.actor.deleteWard(arg0);
             return result;
         }
     }
-    async getCallerUserRole(): Promise<UserRole> {
+    async getAgingAR(): Promise<AgingAR> {
         if (this.processError) {
             try {
-                const result = await this.actor.getCallerUserRole();
-                return from_candid_UserRole_n10(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getCallerUserRole();
-            return from_candid_UserRole_n10(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async isCallerAdmin(): Promise<boolean> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.isCallerAdmin();
+                const result = await this.actor.getAgingAR();
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.isCallerAdmin();
+            const result = await this.actor.getAgingAR();
             return result;
         }
     }
-    // RCM & Masters methods - direct pass-through to actor
-    async registerPatient(req: any): Promise<any> { return (this.actor as any).registerPatient(req); }
-    async getPatients(): Promise<any[]> { return (this.actor as any).getPatients(); }
-    async getPatientById(id: string): Promise<any> { return (this.actor as any).getPatientById(id); }
-    async getPatientByAbhaId(abhaId: string): Promise<any> { return (this.actor as any).getPatientByAbhaId(abhaId); }
-    async searchPatients(searchTerm: string): Promise<any[]> { return (this.actor as any).searchPatients(searchTerm); }
-    async updateEligibility(id: string, status: string): Promise<boolean> { return (this.actor as any).updateEligibility(id, status); }
-    async addDocument(patientId: string, documentId: string, docType: string): Promise<boolean> { return (this.actor as any).addDocument(patientId, documentId, docType); }
-    async getPatientsByStatus(status: string): Promise<any[]> { return (this.actor as any).getPatientsByStatus(status); }
-    async createPreAuth(req: any): Promise<any> { return (this.actor as any).createPreAuth(req); }
-    async getPreAuths(): Promise<any[]> { return (this.actor as any).getPreAuths(); }
-    async getPreAuthById(id: string): Promise<any> { return (this.actor as any).getPreAuthById(id); }
-    async getPreAuthsByPatient(patientId: string): Promise<any[]> { return (this.actor as any).getPreAuthsByPatient(patientId); }
-    async updatePreAuthStatus(id: string, status: string, remarks: string): Promise<boolean> { return (this.actor as any).updatePreAuthStatus(id, status, remarks); }
-    async addQueryResponse(id: string, message: string, fromTPA: boolean): Promise<boolean> { return (this.actor as any).addQueryResponse(id, message, fromTPA); }
-    async getPreAuthsByStatus(status: string): Promise<any[]> { return (this.actor as any).getPreAuthsByStatus(status); }
-    async createClinicalDoc(req: any): Promise<any> { return (this.actor as any).createClinicalDoc(req); }
-    async getClinicalDocs(): Promise<any[]> { return (this.actor as any).getClinicalDocs(); }
-    async getClinicalDocById(id: string): Promise<any> { return (this.actor as any).getClinicalDocById(id); }
-    async getClinicalDocsByPatient(patientId: string): Promise<any[]> { return (this.actor as any).getClinicalDocsByPatient(patientId); }
-    async updateClinicalDoc(id: string, doctorNotes: string, dischargeSummary: string, documentChecklist: any[], status: string): Promise<boolean> { return (this.actor as any).updateClinicalDoc(id, doctorNotes, dischargeSummary, documentChecklist, status); }
-    async getClinicalDocsByStatus(status: string): Promise<any[]> { return (this.actor as any).getClinicalDocsByStatus(status); }
-    async createClaim(req: any): Promise<any> { return (this.actor as any).createClaim(req); }
-    async getClaims(): Promise<any[]> { return (this.actor as any).getClaims(); }
-    async getClaimById(id: string): Promise<any> { return (this.actor as any).getClaimById(id); }
-    async getClaimsByPatient(patientId: string): Promise<any[]> { return (this.actor as any).getClaimsByPatient(patientId); }
-    async getClaimsByPreAuth(preAuthId: string): Promise<any[]> { return (this.actor as any).getClaimsByPreAuth(preAuthId); }
-    async updateClaimStatus(id: string, status: string, remarks: string): Promise<boolean> { return (this.actor as any).updateClaimStatus(id, status, remarks); }
-    async getClaimsByStatus(status: string): Promise<any[]> { return (this.actor as any).getClaimsByStatus(status); }
-    async createPayment(req: any): Promise<any> { return (this.actor as any).createPayment(req); }
-    async getPayments(): Promise<any[]> { return (this.actor as any).getPayments(); }
-    async getPaymentById(id: string): Promise<any> { return (this.actor as any).getPaymentById(id); }
-    async getPaymentsByPatient(patientId: string): Promise<any[]> { return (this.actor as any).getPaymentsByPatient(patientId); }
-    async getPaymentsByClaimId(claimId: string): Promise<any[]> { return (this.actor as any).getPaymentsByClaimId(claimId); }
-    async getPaymentsByStatus(status: string): Promise<any[]> { return (this.actor as any).getPaymentsByStatus(status); }
-    async updatePaymentStatus(id: string, settlementStatus: string, paidAmount: string, transactionRef: string, discrepancyRemarks: string): Promise<boolean> { return (this.actor as any).updatePaymentStatus(id, settlementStatus, paidAmount, transactionRef, discrepancyRemarks); }
-    async createHospital(req: any): Promise<any> { return (this.actor as any).createHospital(req); }
-    async getHospitals(): Promise<any[]> { return (this.actor as any).getHospitals(); }
-    async updateHospital(id: string, req: any): Promise<boolean> { return (this.actor as any).updateHospital(id, req); }
-    async deleteHospital(id: string): Promise<boolean> { return (this.actor as any).deleteHospital(id); }
-    async createDoctor(req: any): Promise<any> { return (this.actor as any).createDoctor(req); }
-    async getDoctors(): Promise<any[]> { return (this.actor as any).getDoctors(); }
-    async updateDoctor(id: string, req: any): Promise<boolean> { return (this.actor as any).updateDoctor(id, req); }
-    async deleteDoctor(id: string): Promise<boolean> { return (this.actor as any).deleteDoctor(id); }
-    async createTpa(req: any): Promise<any> { return (this.actor as any).createTpa(req); }
-    async getTpas(): Promise<any[]> { return (this.actor as any).getTpas(); }
-    async updateTpa(id: string, req: any): Promise<boolean> { return (this.actor as any).updateTpa(id, req); }
-    async deleteTpa(id: string): Promise<boolean> { return (this.actor as any).deleteTpa(id); }
-    async createIcd(req: any): Promise<any> { return (this.actor as any).createIcd(req); }
-    async getIcds(): Promise<any[]> { return (this.actor as any).getIcds(); }
-    async updateIcd(id: string, req: any): Promise<boolean> { return (this.actor as any).updateIcd(id, req); }
-    async deleteIcd(id: string): Promise<boolean> { return (this.actor as any).deleteIcd(id); }
-    async createWard(req: any): Promise<any> { return (this.actor as any).createWard(req); }
-    async getWards(): Promise<any[]> { return (this.actor as any).getWards(); }
-    async updateWard(id: string, req: any): Promise<boolean> { return (this.actor as any).updateWard(id, req); }
-    async deleteWard(id: string): Promise<boolean> { return (this.actor as any).deleteWard(id); }
+    async getAppealById(arg0: string): Promise<Appeal | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAppealById(arg0);
+                return from_candid_opt_n13(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAppealById(arg0);
+            return from_candid_opt_n13(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getAppeals(): Promise<Array<Appeal>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAppeals();
+                return from_candid_vec_n14(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAppeals();
+            return from_candid_vec_n14(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getAppealsByDenialId(arg0: string): Promise<Array<Appeal>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAppealsByDenialId(arg0);
+                return from_candid_vec_n14(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAppealsByDenialId(arg0);
+            return from_candid_vec_n14(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getClaimById(arg0: string): Promise<ClaimRecord | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getClaimById(arg0);
+                return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getClaimById(arg0);
+            return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getClaims(): Promise<Array<ClaimRecord>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getClaims();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getClaims();
+            return result;
+        }
+    }
+    async getClaimsByPatient(arg0: string): Promise<Array<ClaimRecord>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getClaimsByPatient(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getClaimsByPatient(arg0);
+            return result;
+        }
+    }
+    async getClaimsByPreAuth(arg0: string): Promise<Array<ClaimRecord>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getClaimsByPreAuth(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getClaimsByPreAuth(arg0);
+            return result;
+        }
+    }
+    async getClaimsByStatus(arg0: string): Promise<Array<ClaimRecord>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getClaimsByStatus(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getClaimsByStatus(arg0);
+            return result;
+        }
+    }
+    async getClinicalDocById(arg0: string): Promise<ClinicalDocRecord | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getClinicalDocById(arg0);
+                return from_candid_opt_n16(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getClinicalDocById(arg0);
+            return from_candid_opt_n16(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getClinicalDocs(): Promise<Array<ClinicalDocRecord>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getClinicalDocs();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getClinicalDocs();
+            return result;
+        }
+    }
+    async getClinicalDocsByPatient(arg0: string): Promise<Array<ClinicalDocRecord>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getClinicalDocsByPatient(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getClinicalDocsByPatient(arg0);
+            return result;
+        }
+    }
+    async getClinicalDocsByStatus(arg0: string): Promise<Array<ClinicalDocRecord>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getClinicalDocsByStatus(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getClinicalDocsByStatus(arg0);
+            return result;
+        }
+    }
+    async getDenialById(arg0: string): Promise<DenialRecord | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getDenialById(arg0);
+                return from_candid_opt_n17(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getDenialById(arg0);
+            return from_candid_opt_n17(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getDenials(): Promise<Array<DenialRecord>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getDenials();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getDenials();
+            return result;
+        }
+    }
+    async getDenialsByClaimId(arg0: string): Promise<Array<DenialRecord>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getDenialsByClaimId(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getDenialsByClaimId(arg0);
+            return result;
+        }
+    }
+    async getDenialsByStatus(arg0: string): Promise<Array<DenialRecord>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getDenialsByStatus(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getDenialsByStatus(arg0);
+            return result;
+        }
+    }
+    async getDoctors(): Promise<Array<DoctorMaster>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getDoctors();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getDoctors();
+            return result;
+        }
+    }
+    async getHospitals(): Promise<Array<HospitalMaster>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getHospitals();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getHospitals();
+            return result;
+        }
+    }
+    async getIcds(): Promise<Array<IcdMaster>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getIcds();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getIcds();
+            return result;
+        }
+    }
+    async getPatientByAbhaId(arg0: string): Promise<Patient | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPatientByAbhaId(arg0);
+                return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPatientByAbhaId(arg0);
+            return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getPatientById(arg0: string): Promise<Patient | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPatientById(arg0);
+                return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPatientById(arg0);
+            return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getPatients(): Promise<Array<Patient>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPatients();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPatients();
+            return result;
+        }
+    }
+    async getPatientsByStatus(arg0: string): Promise<Array<Patient>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPatientsByStatus(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPatientsByStatus(arg0);
+            return result;
+        }
+    }
+    async getPaymentById(arg0: string): Promise<PaymentRecord | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPaymentById(arg0);
+                return from_candid_opt_n19(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPaymentById(arg0);
+            return from_candid_opt_n19(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getPayments(): Promise<Array<PaymentRecord>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPayments();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPayments();
+            return result;
+        }
+    }
+    async getPaymentsByClaimId(arg0: string): Promise<Array<PaymentRecord>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPaymentsByClaimId(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPaymentsByClaimId(arg0);
+            return result;
+        }
+    }
+    async getPaymentsByPatient(arg0: string): Promise<Array<PaymentRecord>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPaymentsByPatient(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPaymentsByPatient(arg0);
+            return result;
+        }
+    }
+    async getPaymentsByStatus(arg0: string): Promise<Array<PaymentRecord>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPaymentsByStatus(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPaymentsByStatus(arg0);
+            return result;
+        }
+    }
+    async getPreAuthById(arg0: string): Promise<PreAuthRecord | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPreAuthById(arg0);
+                return from_candid_opt_n20(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPreAuthById(arg0);
+            return from_candid_opt_n20(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getPreAuths(): Promise<Array<PreAuthRecord>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPreAuths();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPreAuths();
+            return result;
+        }
+    }
+    async getPreAuthsByPatient(arg0: string): Promise<Array<PreAuthRecord>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPreAuthsByPatient(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPreAuthsByPatient(arg0);
+            return result;
+        }
+    }
+    async getPreAuthsByStatus(arg0: string): Promise<Array<PreAuthRecord>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPreAuthsByStatus(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPreAuthsByStatus(arg0);
+            return result;
+        }
+    }
+    async getRCMStats(): Promise<RCMStats> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getRCMStats();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getRCMStats();
+            return result;
+        }
+    }
+    async getTpas(): Promise<Array<TpaMaster>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getTpas();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getTpas();
+            return result;
+        }
+    }
+    async getWards(): Promise<Array<WardMaster>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getWards();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getWards();
+            return result;
+        }
+    }
+    async registerPatient(arg0: RegisterRequest): Promise<RegisterResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.registerPatient(arg0);
+                return from_candid_RegisterResult_n21(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.registerPatient(arg0);
+            return from_candid_RegisterResult_n21(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async searchPatients(arg0: string): Promise<Array<Patient>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.searchPatients(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.searchPatients(arg0);
+            return result;
+        }
+    }
+    async updateAppealStatus(arg0: string, arg1: string, arg2: string): Promise<AppealResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateAppealStatus(arg0, arg1, arg2);
+                return from_candid_AppealResult_n1(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateAppealStatus(arg0, arg1, arg2);
+            return from_candid_AppealResult_n1(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async updateClaimStatus(arg0: string, arg1: string, arg2: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateClaimStatus(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateClaimStatus(arg0, arg1, arg2);
+            return result;
+        }
+    }
+    async updateClinicalDoc(arg0: string, arg1: string, arg2: string, arg3: Array<ClinicalDocChecklistItem>, arg4: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateClinicalDoc(arg0, arg1, arg2, arg3, arg4);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateClinicalDoc(arg0, arg1, arg2, arg3, arg4);
+            return result;
+        }
+    }
+    async updateDenialStatus(arg0: string, arg1: string, arg2: string, arg3: boolean): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateDenialStatus(arg0, arg1, arg2, arg3);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateDenialStatus(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
+    async updateDoctor(arg0: string, arg1: DoctorMasterRequest): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateDoctor(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateDoctor(arg0, arg1);
+            return result;
+        }
+    }
+    async updateEligibility(arg0: string, arg1: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateEligibility(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateEligibility(arg0, arg1);
+            return result;
+        }
+    }
+    async updateHospital(arg0: string, arg1: HospitalMasterRequest): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateHospital(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateHospital(arg0, arg1);
+            return result;
+        }
+    }
+    async updateIcd(arg0: string, arg1: IcdMasterRequest): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateIcd(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateIcd(arg0, arg1);
+            return result;
+        }
+    }
+    async updatePaymentStatus(arg0: string, arg1: string, arg2: string, arg3: string, arg4: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updatePaymentStatus(arg0, arg1, arg2, arg3, arg4);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updatePaymentStatus(arg0, arg1, arg2, arg3, arg4);
+            return result;
+        }
+    }
+    async updatePreAuthStatus(arg0: string, arg1: string, arg2: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updatePreAuthStatus(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updatePreAuthStatus(arg0, arg1, arg2);
+            return result;
+        }
+    }
+    async updateTpa(arg0: string, arg1: TpaMasterRequest): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateTpa(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateTpa(arg0, arg1);
+            return result;
+        }
+    }
+    async updateWard(arg0: string, arg1: WardMasterRequest): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateWard(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateWard(arg0, arg1);
+            return result;
+        }
+    }
 }
-function from_candid_UserRole_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
-    return from_candid_variant_n11(_uploadFile, _downloadFile, value);
+function from_candid_AppealResult_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _AppealResult): AppealResult {
+    return from_candid_variant_n2(_uploadFile, _downloadFile, value);
 }
-function from_candid__CaffeineStorageRefillResult_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: __CaffeineStorageRefillResult): _CaffeineStorageRefillResult {
-    return from_candid_record_n5(_uploadFile, _downloadFile, value);
+function from_candid_Appeal_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Appeal): Appeal {
+    return from_candid_record_n4(_uploadFile, _downloadFile, value);
 }
-function from_candid_opt_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [boolean]): boolean | null {
+function from_candid_ClaimResult_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ClaimResult): ClaimResult {
+    return from_candid_variant_n7(_uploadFile, _downloadFile, value);
+}
+function from_candid_ClinicalDocResult_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ClinicalDocResult): ClinicalDocResult {
+    return from_candid_variant_n7(_uploadFile, _downloadFile, value);
+}
+function from_candid_DenialResult_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _DenialResult): DenialResult {
+    return from_candid_variant_n7(_uploadFile, _downloadFile, value);
+}
+function from_candid_MasterResult_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _MasterResult): MasterResult {
+    return from_candid_variant_n7(_uploadFile, _downloadFile, value);
+}
+function from_candid_PaymentResult_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _PaymentResult): PaymentResult {
+    return from_candid_variant_n7(_uploadFile, _downloadFile, value);
+}
+function from_candid_PreAuthResult_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _PreAuthResult): PreAuthResult {
+    return from_candid_variant_n7(_uploadFile, _downloadFile, value);
+}
+function from_candid_RegisterResult_n21(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _RegisterResult): RegisterResult {
+    return from_candid_variant_n7(_uploadFile, _downloadFile, value);
+}
+function from_candid_opt_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Appeal]): Appeal | null {
+    return value.length === 0 ? null : from_candid_Appeal_n3(_uploadFile, _downloadFile, value[0]);
+}
+function from_candid_opt_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_ClaimRecord]): ClaimRecord | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [bigint]): bigint | null {
+function from_candid_opt_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_ClinicalDocRecord]): ClinicalDocRecord | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_record_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    success: [] | [boolean];
-    topped_up_amount: [] | [bigint];
+function from_candid_opt_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_DenialRecord]): DenialRecord | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Patient]): Patient | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n19(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_PaymentRecord]): PaymentRecord | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_PreAuthRecord]): PreAuthRecord | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [bigint]): bigint | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_record_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    id: string;
+    status: string;
+    appealReason: string;
+    patientId: string;
+    createdAt: bigint;
+    submittedAt: [] | [bigint];
+    claimId: string;
+    denialId: string;
+    notes: string;
+    resolvedAt: [] | [bigint];
 }): {
-    success?: boolean;
-    topped_up_amount?: bigint;
+    id: string;
+    status: string;
+    appealReason: string;
+    patientId: string;
+    createdAt: bigint;
+    submittedAt?: bigint;
+    claimId: string;
+    denialId: string;
+    notes: string;
+    resolvedAt?: bigint;
 } {
     return {
-        success: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.success)),
-        topped_up_amount: record_opt_to_undefined(from_candid_opt_n7(_uploadFile, _downloadFile, value.topped_up_amount))
+        id: value.id,
+        status: value.status,
+        appealReason: value.appealReason,
+        patientId: value.patientId,
+        createdAt: value.createdAt,
+        submittedAt: record_opt_to_undefined(from_candid_opt_n5(_uploadFile, _downloadFile, value.submittedAt)),
+        claimId: value.claimId,
+        denialId: value.denialId,
+        notes: value.notes,
+        resolvedAt: record_opt_to_undefined(from_candid_opt_n5(_uploadFile, _downloadFile, value.resolvedAt))
     };
 }
-function from_candid_variant_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    admin: null;
+function from_candid_variant_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    ok: _Appeal;
 } | {
-    user: null;
-} | {
-    guest: null;
-}): UserRole {
-    return "admin" in value ? UserRole.admin : "user" in value ? UserRole.user : "guest" in value ? UserRole.guest : value;
-}
-function to_candid_UserRole_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
-    return to_candid_variant_n9(_uploadFile, _downloadFile, value);
-}
-function to_candid__CaffeineStorageRefillInformation_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _CaffeineStorageRefillInformation): __CaffeineStorageRefillInformation {
-    return to_candid_record_n3(_uploadFile, _downloadFile, value);
-}
-function to_candid_opt_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _CaffeineStorageRefillInformation | null): [] | [__CaffeineStorageRefillInformation] {
-    return value === null ? candid_none() : candid_some(to_candid__CaffeineStorageRefillInformation_n2(_uploadFile, _downloadFile, value));
-}
-function to_candid_record_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    proposed_top_up_amount?: bigint;
+    err: string;
 }): {
-    proposed_top_up_amount: [] | [bigint];
-} {
-    return {
-        proposed_top_up_amount: value.proposed_top_up_amount ? candid_some(value.proposed_top_up_amount) : candid_none()
-    };
-}
-function to_candid_variant_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): {
-    admin: null;
+    __kind__: "ok";
+    ok: Appeal;
 } | {
-    user: null;
-} | {
-    guest: null;
+    __kind__: "err";
+    err: string;
 } {
-    return value == UserRole.admin ? {
-        admin: null
-    } : value == UserRole.user ? {
-        user: null
-    } : value == UserRole.guest ? {
-        guest: null
+    return "ok" in value ? {
+        __kind__: "ok",
+        ok: from_candid_Appeal_n3(_uploadFile, _downloadFile, value.ok)
+    } : "err" in value ? {
+        __kind__: "err",
+        err: value.err
     } : value;
+}
+function from_candid_variant_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    ok: string;
+} | {
+    err: string;
+}): {
+    __kind__: "ok";
+    ok: string;
+} | {
+    __kind__: "err";
+    err: string;
+} {
+    return "ok" in value ? {
+        __kind__: "ok",
+        ok: value.ok
+    } : "err" in value ? {
+        __kind__: "err",
+        err: value.err
+    } : value;
+}
+function from_candid_vec_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Appeal>): Array<Appeal> {
+    return value.map((x)=>from_candid_Appeal_n3(_uploadFile, _downloadFile, x));
 }
 export interface CreateActorOptions {
     agent?: Agent;

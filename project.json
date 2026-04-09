@@ -1,0 +1,28 @@
+{
+  "overview": "Health Package Finder is a comprehensive medical package search and RCM (Revenue Cycle Management) platform for hospitals. It covers the full revenue cycle from patient registration through claims settlement, with analytics dashboards, aging AR tracking, denial management, and workflow automation.",
+  "features": [
+    "Search 3,453 medical packages with advanced filters",
+    "Full RCM workflow: Patient → Pre-Auth → Clinical Docs → Claims → Payment",
+    "RCM Analytics Dashboard with KPIs (AR, approval rate, denial rate, resolution time)",
+    "Aging AR tracker with 0-30, 30-60, 60-90, 90+ day buckets",
+    "Claim status timeline visualization",
+    "Enhanced Denial & Rejection with appeal tracking",
+    "ICD-10 / package code validation at pre-auth stage",
+    "Masters management (Hospital, Doctor, TPA, ICD-10, Ward)",
+    "Local Data Source Manager (XLS, Word, PDF, Images)",
+    "Wikipedia-powered package descriptions",
+    "Clinical notes generation as editable Word documents",
+    "User Manual covering all modules"
+  ],
+  "category": "healthcare",
+  "tags": [
+    "rcm",
+    "healthcare",
+    "hospital",
+    "claims",
+    "billing",
+    "pre-authorization",
+    "medical"
+  ],
+  "last_updated": "2026-04-09T06:17:17.968Z"
+}

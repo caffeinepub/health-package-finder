@@ -62,6 +62,36 @@
     --sidebar-accent-foreground: 0.95 0.012 237;
     --sidebar-border: 0.35 0.08 232;
     --sidebar-ring: 0.44 0.13 230;
+
+    /* RCM Status Colors - Semantically distinct for claim workflow */
+    /* Approved: emerald green for positive outcomes */
+    --status-approved: 0.67 0.15 142;
+    /* Pending: amber for waiting states */
+    --status-pending: 0.78 0.16 85;
+    /* Denied: red for rejections */
+    --status-denied: 0.577 0.245 27.325;
+    /* Settled: slate-blue for completed payments */
+    --status-settled: 0.52 0.08 234;
+
+    /* Aging AR Buckets - Progressive urgency color scale */
+    /* 0-30 days: green - healthy */
+    --ar-0-30: 0.67 0.15 142;
+    /* 31-60 days: yellow - caution */
+    --ar-31-60: 0.78 0.16 85;
+    /* 61-90 days: orange - warning */
+    --ar-61-90: 0.75 0.18 52;
+    /* 91+ days: red - critical */
+    --ar-91-plus: 0.577 0.245 27.325;
+
+    /* Unified RCM Workflow - 4-Step Stepper */
+    /* Teal for positive actions & completion */
+    --workflow-success: 0.67 0.15 142;
+    /* Amber for in-progress & warnings */
+    --workflow-progress: 0.78 0.16 85;
+    /* Red for missing/critical items */
+    --workflow-critical: 0.577 0.245 27.325;
+    /* Slate-blue for settled/completed */
+    --workflow-settled: 0.52 0.08 234;
   }
 
   * {
@@ -78,5 +108,334 @@
 @layer components {
   .rcm-label {
     @apply block text-xs font-semibold text-hp-muted uppercase tracking-wide mb-1.5;
+  }
+
+  /* RCM KPI Card - Dashboard metrics card with clear hierarchy */
+  .rcm-kpi-card {
+    @apply rounded-lg bg-card border border-border p-6 transition-all hover:shadow-md;
+  }
+
+  .rcm-kpi-value {
+    @apply text-3xl font-bold text-foreground mt-2;
+  }
+
+  .rcm-kpi-label {
+    @apply text-sm text-muted-foreground uppercase tracking-wide;
+  }
+
+  .rcm-kpi-change {
+    @apply text-xs font-medium mt-2;
+  }
+
+  /* Status Badge - Semantic color coding for claim states */
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold gap-1;
+  }
+
+  .status-approved {
+    @apply bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300;
+  }
+
+  .status-pending {
+    @apply bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300;
+  }
+
+  .status-denied {
+    @apply bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300;
+  }
+
+  .status-settled {
+    @apply bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300;
+  }
+
+  /* Aging AR Bucket - Color-coded by days overdue */
+  .ar-bucket {
+    @apply rounded-lg p-4 border border-opacity-30 flex items-center justify-between;
+  }
+
+  .ar-bucket-0-30 {
+    @apply bg-green-50 border-green-300 dark:bg-green-900/10 dark:border-green-800;
+  }
+
+  .ar-bucket-31-60 {
+    @apply bg-yellow-50 border-yellow-300 dark:bg-yellow-900/10 dark:border-yellow-800;
+  }
+
+  .ar-bucket-61-90 {
+    @apply bg-orange-50 border-orange-300 dark:bg-orange-900/10 dark:border-orange-800;
+  }
+
+  .ar-bucket-91-plus {
+    @apply bg-red-50 border-red-300 dark:bg-red-900/10 dark:border-red-800;
+  }
+
+  .ar-bucket-label {
+    @apply text-xs font-semibold uppercase tracking-wide;
+  }
+
+  .ar-bucket-value {
+    @apply text-xl font-bold;
+  }
+
+  /* Claim Timeline - Horizontal progress visualization */
+  .claim-timeline {
+    @apply relative flex items-center gap-1;
+  }
+
+  .timeline-step {
+    @apply relative flex flex-col items-center;
+  }
+
+  .timeline-dot {
+    @apply w-3 h-3 rounded-full border-2 flex-shrink-0 transition-colors;
+  }
+
+  .timeline-connector {
+    @apply flex-1 h-0.5 bg-border;
+  }
+
+  .timeline-step.active .timeline-dot {
+    @apply bg-primary border-primary;
+  }
+
+  .timeline-step.completed .timeline-dot {
+    @apply bg-green-500 border-green-500;
+  }
+
+  .timeline-step.pending .timeline-dot {
+    @apply bg-amber-500 border-amber-500;
+  }
+
+  .timeline-label {
+    @apply text-xs text-muted-foreground mt-1 text-center whitespace-nowrap;
+  }
+
+  /* ICD-10 Validation - Inline warning indicator */
+  .icd-validation-badge {
+    @apply inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium;
+  }
+
+  .icd-valid {
+    @apply bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300;
+  }
+
+  .icd-invalid {
+    @apply bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300;
+  }
+
+  .icd-pending {
+    @apply bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300;
+  }
+
+  /* Appeal Tracking - Enhanced denial management visuals */
+  .appeal-badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold gap-2;
+  }
+
+  .appeal-pending {
+    @apply bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300;
+  }
+
+  .appeal-approved {
+    @apply bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300;
+  }
+
+  .appeal-rejected {
+    @apply bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300;
+  }
+
+  .appeal-timeline-item {
+    @apply relative pl-6 pb-4 before:content-[''] before:absolute before:left-0 before:top-2 before:w-3 before:h-3 before:bg-primary before:rounded-full;
+  }
+
+  .appeal-timeline-item.completed::before {
+    @apply bg-green-500;
+  }
+
+  .appeal-timeline-date {
+    @apply text-xs text-muted-foreground font-semibold uppercase;
+  }
+
+  .appeal-timeline-text {
+    @apply text-sm text-foreground mt-1;
+  }
+
+  /* Unified RCM Workflow Stepper */
+  .workflow-stepper-container {
+    @apply flex flex-col gap-6;
+  }
+
+  .workflow-step-card {
+    @apply relative rounded-lg border border-border bg-card p-6 transition-all;
+  }
+
+  .workflow-step-card.active {
+    @apply border-primary shadow-md bg-blue-50 dark:bg-blue-950/20;
+  }
+
+  .workflow-step-card.completed {
+    @apply border-green-300 bg-green-50 dark:bg-green-950/20;
+  }
+
+  .workflow-step-card.pending {
+    @apply border-border opacity-75;
+  }
+
+  .workflow-step-header {
+    @apply flex items-center justify-between gap-3 mb-4;
+  }
+
+  .workflow-step-number {
+    @apply inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold;
+  }
+
+  .workflow-step-number.active {
+    @apply bg-primary text-white;
+  }
+
+  .workflow-step-number.completed {
+    @apply bg-green-500 text-white;
+  }
+
+  .workflow-step-number.pending {
+    @apply bg-border text-muted-foreground;
+  }
+
+  .workflow-step-title {
+    @apply text-lg font-semibold text-foreground;
+  }
+
+  .workflow-step-status {
+    @apply text-xs font-medium px-2.5 py-1 rounded-full;
+  }
+
+  .workflow-step-status.in-progress {
+    @apply bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300;
+  }
+
+  .workflow-step-status.complete {
+    @apply bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300;
+  }
+
+  .workflow-step-status.pending {
+    @apply bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-300;
+  }
+
+  .workflow-step-content {
+    @apply space-y-4;
+  }
+
+  .workflow-checklist {
+    @apply space-y-2;
+  }
+
+  .workflow-checklist-item {
+    @apply flex items-center gap-3 p-2 rounded text-sm;
+  }
+
+  .workflow-checklist-item.completed {
+    @apply bg-green-50 text-green-900 dark:bg-green-950/20 dark:text-green-300;
+  }
+
+  .workflow-checklist-item.missing {
+    @apply bg-red-50 text-red-900 dark:bg-red-950/20 dark:text-red-300;
+  }
+
+  .workflow-checklist-item.optional {
+    @apply bg-amber-50 text-amber-900 dark:bg-amber-950/20 dark:text-amber-300;
+  }
+
+  .workflow-progress-bar {
+    @apply relative w-full h-1.5 rounded-full bg-border overflow-hidden;
+  }
+
+  .workflow-progress-fill {
+    @apply h-full rounded-full transition-all duration-500 ease-out;
+  }
+
+  .workflow-progress-fill.active {
+    @apply bg-primary;
+  }
+
+  .workflow-progress-fill.complete {
+    @apply bg-green-500;
+  }
+
+  .workflow-progress-fill.warning {
+    @apply bg-amber-500;
+  }
+
+  .workflow-action-button {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all text-sm;
+  }
+
+  .workflow-action-button.primary {
+    @apply bg-primary text-white hover:bg-opacity-90;
+  }
+
+  .workflow-action-button.secondary {
+    @apply bg-border text-foreground hover:bg-opacity-70;
+  }
+
+  .workflow-action-button.destructive {
+    @apply bg-red-600 text-white hover:bg-opacity-90;
+  }
+
+  /* Mode Selection Cards */
+  .mode-selector-card {
+    @apply rounded-lg border-2 border-border p-6 text-center cursor-pointer transition-all hover:border-primary hover:shadow-md;
+  }
+
+  .mode-selector-card.selected {
+    @apply border-primary bg-blue-50 dark:bg-blue-950/20;
+  }
+
+  .mode-icon {
+    @apply text-4xl mb-3;
+  }
+
+  .mode-title {
+    @apply text-lg font-semibold text-foreground mb-1;
+  }
+
+  .mode-description {
+    @apply text-xs text-muted-foreground;
+  }
+
+  /* Data-Dense Table for Docs Upload */
+  .workflow-doc-row {
+    @apply grid grid-cols-12 gap-2 items-center p-3 border-b border-border;
+  }
+
+  .workflow-doc-status {
+    @apply col-span-1 flex items-center justify-center;
+  }
+
+  .workflow-doc-name {
+    @apply col-span-5 text-sm font-medium text-foreground truncate;
+  }
+
+  .workflow-doc-badge {
+    @apply col-span-2 text-xs font-semibold px-2 py-1 rounded text-center;
+  }
+
+  .workflow-doc-action {
+    @apply col-span-4 flex gap-1;
+  }
+
+  .workflow-validation-banner {
+    @apply rounded-lg border-l-4 p-4 mb-4;
+  }
+
+  .workflow-validation-banner.warning {
+    @apply border-l-amber-500 bg-amber-50 dark:bg-amber-950/20;
+  }
+
+  .workflow-validation-banner.critical {
+    @apply border-l-red-500 bg-red-50 dark:bg-red-950/20;
+  }
+
+  .workflow-validation-banner.success {
+    @apply border-l-green-500 bg-green-50 dark:bg-green-950/20;
   }
 }
