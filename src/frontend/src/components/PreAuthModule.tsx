@@ -1452,50 +1452,62 @@ function NewPreAuthForm({
       toast.error("Backend not ready. Please wait a moment and try again.");
       return;
     }
-    const parsedTAT = Number.parseInt(form.expectedTATHours);
+    const parsedTAT = Number.parseInt(form.expectedTATHours, 10);
     if (Number.isNaN(parsedTAT) || parsedTAT <= 0) {
       toast.error("Expected TAT hours must be a positive number.");
       return;
     }
     setIsSubmitting(true);
     try {
+      // Strip checklist to ONLY the 3 fields in DocChecklistItem:
+      // { docName, required, submitted } — extra fields cause silent failures
       const req: PreAuthRequest = {
         patientId: form.patientId.trim(),
         patientName: form.patientName.trim(),
         packageCode: form.packageCode.trim(),
         packageName: form.packageName.trim(),
         diagnosisName: form.diagnosisName.trim(),
-        schemeType: form.schemeType.trim(),
-        payerName: form.payerName.trim(),
+        schemeType: form.schemeType.trim() || "Other",
+        payerName: (form.payerName || "N/A").trim(),
         requestedAmount: (form.requestedAmount || "0").toString().trim() || "0",
         expectedTATHours: BigInt(Math.max(1, parsedTAT)),
         documentChecklist: (form.checklist || []).map((item) => ({
-          docName: String(item.docName || ""),
+          docName: String(item.docName || "").trim(),
           required: Boolean(item.required),
           submitted: Boolean(item.submitted),
         })),
       };
       console.log(
-        "[PreAuth] Submitting request:",
+        "[PreAuth] Submitting PreAuthRequest:",
         JSON.stringify(req, (_k, v) =>
           typeof v === "bigint" ? v.toString() : v,
         ),
       );
       const result = await actor.createPreAuth(req);
       if ("ok" in result) {
-        toast.success(`Pre-Auth created: ${result.ok}`);
+        toast.success(`Pre-Auth created successfully: ${result.ok}`);
         setForm(EMPTY_PREAUTH_FORM);
         setPatientFound(false);
         setIcdValidation({ status: "unchecked" });
         setPackageValidations([]);
         onSuccess();
+      } else if ("err" in result) {
+        console.error("[PreAuth] Backend returned error:", result.err);
+        toast.error(`Pre-Auth failed: ${result.err}`, {
+          description: "Check the details and try again.",
+          duration: 8000,
+        });
       } else {
-        toast.error(`Error: ${result.err}`);
+        console.error("[PreAuth] Unexpected response shape:", result);
+        toast.error("Pre-Auth failed: unexpected response from backend");
       }
     } catch (err) {
-      console.error("[PreAuth] createPreAuth failed:", err);
+      console.error("[PreAuth] createPreAuth threw:", err);
       const message = err instanceof Error ? err.message : String(err);
-      toast.error(`Failed to create pre-auth: ${message}`);
+      toast.error(`Failed to create pre-auth: ${message}`, {
+        description: "Check the browser console for full error details.",
+        duration: 8000,
+      });
     } finally {
       setIsSubmitting(false);
     }

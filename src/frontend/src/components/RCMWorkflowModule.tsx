@@ -786,6 +786,7 @@ function Step2PackagePreAuth({
   const [icds, setIcds] = useState<IcdMaster[]>([]);
   const [wards, setWards] = useState<WardMaster[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [preAuthError, setPreAuthError] = useState<string | null>(null);
   const [icdQuery, setIcdQuery] = useState("");
   const [showIcdDropdown, setShowIcdDropdown] = useState(false);
   const multi = state.mode === "multi";
@@ -866,42 +867,51 @@ function Step2PackagePreAuth({
       toast.error("Add at least one ICD-10 diagnosis code");
       return;
     }
+    setPreAuthError(null);
     setSubmitting(true);
     try {
+      // Strip checklist to ONLY the 3 fields defined in DocChecklistItem
+      // (docName, required, submitted) — extra fields like docType/packageCode
+      // cause silent Candid serialization failures on the backend
       const checklist: DocChecklistItem[] = buildDocChecklist(
         state.selectedPackages,
         state.mode ?? "surgical",
       ).map((d) => ({
-        docName: String(d.docName || ""),
+        docName: String(d.docName || "").trim(),
         required: Boolean(d.required),
         submitted: false,
       }));
 
+      // Safe TAT conversion: guard against NaN/0/undefined from numeric input
+      const rawTAT = Number(state.tatHours);
+      const safeTAT = BigInt(Math.max(1, Number.isNaN(rawTAT) ? 48 : rawTAT));
+
       const req = {
-        patientId: state.patientData.id,
-        patientName: state.patientData.name,
+        patientId: String(state.patientData.id).trim(),
+        patientName: String(state.patientData.name).trim(),
         packageCode: state.packageCodes.join("; "),
         packageName: state.selectedPackages
           .map((p) => p.packageName)
           .join("; "),
-        diagnosisName: state.diagnosisName,
-        schemeType: (
-          state.schemeType ||
-          state.patientData.payerType ||
-          ""
+        diagnosisName: String(
+          state.diagnosisName || state.diagnosisCodes.join("; "),
         ).trim(),
-        payerName: (state.patientData.payerName || "").trim(),
-        requestedAmount: (String(totalRate) || "0").trim() || "0",
-        expectedTATHours: BigInt(state.tatHours),
+        schemeType: String(
+          state.schemeType || state.patientData.payerType || "Other",
+        ).trim(),
+        payerName: String(state.patientData.payerName || "N/A").trim(),
+        requestedAmount: String(totalRate > 0 ? totalRate : "0"),
+        expectedTATHours: safeTAT,
         documentChecklist: checklist,
       };
 
       console.log(
-        "[PreAuth/RCMWorkflow] Submitting request:",
+        "[PreAuth/RCMWorkflow] Submitting PreAuthRequest:",
         JSON.stringify(req, (_k, v) =>
           typeof v === "bigint" ? v.toString() : v,
         ),
       );
+
       const res = await actor.createPreAuth(req);
       if ("ok" in res) {
         const newDocChecklist = buildDocChecklist(
@@ -909,15 +919,25 @@ function Step2PackagePreAuth({
           state.mode ?? "surgical",
         );
         onUpdate({ preAuthId: res.ok, docChecklist: newDocChecklist });
-        toast.success(`Pre-Auth created: ${res.ok}`);
+        toast.success(`Pre-Auth created successfully: ${res.ok}`);
         onComplete();
       } else if ("err" in res) {
+        console.error("[PreAuth/RCMWorkflow] Backend returned error:", res.err);
+        setPreAuthError(`Backend error: ${res.err}`);
         toast.error(`Pre-Auth failed: ${res.err}`);
+      } else {
+        console.error("[PreAuth/RCMWorkflow] Unexpected response shape:", res);
+        setPreAuthError("Unexpected response from backend. Check console.");
+        toast.error("Pre-Auth failed: unexpected response from backend");
       }
     } catch (err) {
-      console.error("[PreAuth/RCMWorkflow] createPreAuth failed:", err);
+      console.error("[PreAuth/RCMWorkflow] createPreAuth threw:", err);
       const message = err instanceof Error ? err.message : String(err);
-      toast.error(`Failed to create Pre-Auth: ${message}`);
+      setPreAuthError(`Exception: ${message}`);
+      toast.error(`Failed to create Pre-Auth: ${message}`, {
+        description: "Check the browser console for full details.",
+        duration: 8000,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -1128,7 +1148,10 @@ function Step2PackagePreAuth({
               type="number"
               min={1}
               value={state.tatHours}
-              onChange={(e) => onUpdate({ tatHours: Number(e.target.value) })}
+              onChange={(e) => {
+                const v = Number.parseInt(e.target.value, 10);
+                onUpdate({ tatHours: Number.isNaN(v) ? 48 : Math.max(1, v) });
+              }}
               className="w-full text-sm border border-hp-border rounded-lg px-3 py-2 bg-hp-bg focus:outline-none focus:ring-2 focus:ring-hp-blue/30"
             />
           </div>
@@ -1177,6 +1200,32 @@ function Step2PackagePreAuth({
           )}
         </div>
       </div>
+
+      {/* Pre-Auth error banner */}
+      {preAuthError && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 bg-red-50 border border-red-300 rounded-xl p-4"
+        >
+          <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-red-800">
+              Pre-Auth Creation Failed
+            </p>
+            <p className="text-xs text-red-700 mt-0.5 break-words">
+              {preAuthError}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setPreAuthError(null)}
+            className="shrink-0 text-red-400 hover:text-red-600"
+            aria-label="Dismiss error"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* Pre-Auth success badge */}
       {state.preAuthId && (
