@@ -872,8 +872,8 @@ function Step2PackagePreAuth({
         state.selectedPackages,
         state.mode ?? "surgical",
       ).map((d) => ({
-        docName: d.docName,
-        required: d.required,
+        docName: String(d.docName || ""),
+        required: Boolean(d.required),
         submitted: false,
       }));
 
@@ -885,13 +885,23 @@ function Step2PackagePreAuth({
           .map((p) => p.packageName)
           .join("; "),
         diagnosisName: state.diagnosisName,
-        schemeType: state.schemeType || state.patientData.payerType,
-        payerName: state.patientData.payerName,
-        requestedAmount: String(totalRate),
+        schemeType: (
+          state.schemeType ||
+          state.patientData.payerType ||
+          ""
+        ).trim(),
+        payerName: (state.patientData.payerName || "").trim(),
+        requestedAmount: (String(totalRate) || "0").trim() || "0",
         expectedTATHours: BigInt(state.tatHours),
         documentChecklist: checklist,
       };
 
+      console.log(
+        "[PreAuth/RCMWorkflow] Submitting request:",
+        JSON.stringify(req, (_k, v) =>
+          typeof v === "bigint" ? v.toString() : v,
+        ),
+      );
       const res = await actor.createPreAuth(req);
       if ("ok" in res) {
         const newDocChecklist = buildDocChecklist(
@@ -904,8 +914,10 @@ function Step2PackagePreAuth({
       } else if ("err" in res) {
         toast.error(`Pre-Auth failed: ${res.err}`);
       }
-    } catch {
-      toast.error("Failed to create Pre-Auth");
+    } catch (err) {
+      console.error("[PreAuth/RCMWorkflow] createPreAuth failed:", err);
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(`Failed to create Pre-Auth: ${message}`);
     } finally {
       setSubmitting(false);
     }
@@ -1716,11 +1728,11 @@ function Step4ClaimSubmission({
         </div>
         <div className="flex flex-wrap gap-3 justify-center">
           <Button
-            onClick={() => onNavigate("claims")}
+            onClick={() => onNavigate("aging-ar")}
             variant="outline"
             className="rounded-xl border-hp-border text-hp-body font-semibold"
           >
-            <Receipt className="h-4 w-4 mr-2" /> View in Claims
+            <Receipt className="h-4 w-4 mr-2" /> Aging AR Tracker
           </Button>
           <Button
             onClick={() => onNavigate("rcm")}
@@ -2290,11 +2302,11 @@ export function RCMWorkflowModule({
             </p>
             <div className="flex gap-3 justify-center flex-wrap">
               <Button
-                onClick={() => onNavigate("claims")}
+                onClick={() => onNavigate("aging-ar")}
                 variant="outline"
                 className="rounded-xl font-semibold"
               >
-                <Receipt className="h-4 w-4 mr-2" /> View Claims
+                <Receipt className="h-4 w-4 mr-2" /> Aging AR Tracker
               </Button>
               <Button
                 onClick={handleReset}

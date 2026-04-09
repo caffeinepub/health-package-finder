@@ -14,9 +14,7 @@ import {
   Clock,
   Database,
   ExternalLink,
-  FileCheck,
   FileText,
-  FolderOpen,
   Globe,
   Home,
   Info,
@@ -36,15 +34,11 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AgingARModule } from "./components/AgingARModule";
 import { ClaimValidationModule } from "./components/ClaimValidationModule";
-import { ClaimsModule } from "./components/ClaimsModule";
-import { ClinicalDocsModule } from "./components/ClinicalDocsModule";
 import { DenialModule } from "./components/DenialModule";
 import { GenerateNotesModal } from "./components/GenerateNotesModal";
 import type { HealthPackage } from "./components/GenerateNotesModal";
-import { LocalDataSourceModule } from "./components/LocalDataSourceModule";
 import { MastersModule } from "./components/MastersModule";
 import { PaymentModule } from "./components/PaymentModule";
-import { PreAuthModule } from "./components/PreAuthModule";
 import { RCMDashboard } from "./components/RCMDashboard";
 import { RCMModule } from "./components/RCMModule";
 import { RCMWorkflowModule } from "./components/RCMWorkflowModule";
@@ -692,14 +686,10 @@ function MainApp() {
     | "dashboard"
     | "rcm"
     | "rcm-workflow"
-    | "preauth"
-    | "clinicaldocs"
-    | "claims"
     | "claim-validation"
     | "aging-ar"
     | "payment"
     | "masters"
-    | "datasource"
     | "denial"
     | "manual"
   >("home");
@@ -874,54 +864,6 @@ function MainApp() {
             </button>
             <button
               type="button"
-              data-ocid="nav.preauth.link"
-              onClick={() => setActivePage("preauth")}
-              className={cn(
-                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                activePage === "preauth"
-                  ? "bg-white/20 text-white"
-                  : "text-white/70 hover:text-white hover:bg-white/10",
-              )}
-            >
-              <span className="flex items-center gap-1">
-                <FileCheck className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Pre-Auth</span>
-              </span>
-            </button>
-            <button
-              type="button"
-              data-ocid="nav.clinicaldocs.link"
-              onClick={() => setActivePage("clinicaldocs")}
-              className={cn(
-                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                activePage === "clinicaldocs"
-                  ? "bg-white/20 text-white"
-                  : "text-white/70 hover:text-white hover:bg-white/10",
-              )}
-            >
-              <span className="flex items-center gap-1">
-                <FileText className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Clinical Docs</span>
-              </span>
-            </button>
-            <button
-              type="button"
-              data-ocid="nav.claims.link"
-              onClick={() => setActivePage("claims")}
-              className={cn(
-                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                activePage === "claims"
-                  ? "bg-white/20 text-white"
-                  : "text-white/70 hover:text-white hover:bg-white/10",
-              )}
-            >
-              <span className="flex items-center gap-1">
-                <Receipt className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Claims</span>
-              </span>
-            </button>
-            <button
-              type="button"
               data-ocid="nav.claim-validation.link"
               onClick={() => setActivePage("claim-validation")}
               className={cn(
@@ -982,22 +924,6 @@ function MainApp() {
               <span className="flex items-center gap-1">
                 <Database className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Masters</span>
-              </span>
-            </button>
-            <button
-              type="button"
-              data-ocid="nav.datasource.link"
-              onClick={() => setActivePage("datasource")}
-              className={cn(
-                "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-                activePage === "datasource"
-                  ? "bg-white/20 text-white"
-                  : "text-white/70 hover:text-white hover:bg-white/10",
-              )}
-            >
-              <span className="flex items-center gap-1">
-                <FolderOpen className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Data</span>
               </span>
             </button>
             <button
@@ -1433,25 +1359,6 @@ function MainApp() {
             <RCMWorkflowModule onNavigate={handleNavigate} />
           </motion.main>
         )}
-        {activePage === "preauth" && (
-          <PreAuthModule
-            key="preauth"
-            onNavigate={handleNavigate}
-            prefill={prefill}
-            onPrefillConsumed={handlePrefillConsumed}
-          />
-        )}
-        {activePage === "clinicaldocs" && (
-          <ClinicalDocsModule key="clinicaldocs" onNavigate={handleNavigate} />
-        )}
-        {activePage === "claims" && (
-          <ClaimsModule
-            key="claims"
-            onNavigate={handleNavigate}
-            prefill={prefill}
-            onPrefillConsumed={handlePrefillConsumed}
-          />
-        )}
         {activePage === "claim-validation" && (
           <motion.main
             key="claim-validation"
@@ -1482,9 +1389,6 @@ function MainApp() {
           />
         )}
         {activePage === "masters" && <MastersModule key="masters" />}
-        {activePage === "datasource" && (
-          <LocalDataSourceModule key="datasource" />
-        )}
         {activePage === "denial" && (
           <DenialModule
             key="denial"

@@ -712,7 +712,7 @@ export function AgingARModule({
   }
 
   function handleViewClaim(claimId: string) {
-    onNavigate?.("claims", { claimId });
+    onNavigate?.("rcm-workflow", { claimId });
   }
 
   function handleSaveFollowUp(note: FollowUpNote) {
@@ -805,7 +805,7 @@ export function AgingARModule({
       {/* Workflow Banner */}
       <div className="max-w-screen-xl mx-auto px-5 pt-5">
         <WorkflowBanner
-          currentStep="claims"
+          currentStep="aging-ar"
           onNavigate={(page) => onNavigate?.(page)}
         />
       </div>

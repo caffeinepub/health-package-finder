@@ -1118,14 +1118,14 @@ function TimelineEntry({
       icon: FileCheck,
       color: "text-blue-600",
       bg: "bg-blue-50 border-blue-200",
-      nav: "preauth",
+      nav: "rcm-workflow",
     },
     claim: {
       label: "Claim",
       icon: Receipt,
       color: "text-emerald-600",
       bg: "bg-emerald-50 border-emerald-200",
-      nav: "claims",
+      nav: "rcm-workflow",
     },
     payment: {
       label: "Payment",

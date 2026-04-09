@@ -651,7 +651,8 @@ function PreAuthCard({
       } else {
         toast.error("Failed to add response");
       }
-    } catch {
+    } catch (err) {
+      console.error("[PreAuth] addQueryResponse failed:", err);
       toast.error("Error sending response");
     } finally {
       setIsSendingReply(false);
@@ -675,7 +676,8 @@ function PreAuthCard({
       } else {
         toast.error("Failed to update status");
       }
-    } catch {
+    } catch (err) {
+      console.error("[PreAuth] updatePreAuthStatus failed:", err);
       toast.error("Error updating status");
     } finally {
       setIsSavingStatus(false);
@@ -1445,7 +1447,16 @@ function NewPreAuthForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!validate() || !actor) return;
+    if (!validate()) return;
+    if (!actor) {
+      toast.error("Backend not ready. Please wait a moment and try again.");
+      return;
+    }
+    const parsedTAT = Number.parseInt(form.expectedTATHours);
+    if (Number.isNaN(parsedTAT) || parsedTAT <= 0) {
+      toast.error("Expected TAT hours must be a positive number.");
+      return;
+    }
     setIsSubmitting(true);
     try {
       const req: PreAuthRequest = {
@@ -1454,14 +1465,22 @@ function NewPreAuthForm({
         packageCode: form.packageCode.trim(),
         packageName: form.packageName.trim(),
         diagnosisName: form.diagnosisName.trim(),
-        schemeType: form.schemeType,
+        schemeType: form.schemeType.trim(),
         payerName: form.payerName.trim(),
-        requestedAmount: form.requestedAmount.trim() || "0",
-        expectedTATHours: BigInt(
-          Math.max(1, Number.parseInt(form.expectedTATHours) || 48),
-        ),
-        documentChecklist: form.checklist,
+        requestedAmount: (form.requestedAmount || "0").toString().trim() || "0",
+        expectedTATHours: BigInt(Math.max(1, parsedTAT)),
+        documentChecklist: (form.checklist || []).map((item) => ({
+          docName: String(item.docName || ""),
+          required: Boolean(item.required),
+          submitted: Boolean(item.submitted),
+        })),
       };
+      console.log(
+        "[PreAuth] Submitting request:",
+        JSON.stringify(req, (_k, v) =>
+          typeof v === "bigint" ? v.toString() : v,
+        ),
+      );
       const result = await actor.createPreAuth(req);
       if ("ok" in result) {
         toast.success(`Pre-Auth created: ${result.ok}`);
@@ -1473,8 +1492,10 @@ function NewPreAuthForm({
       } else {
         toast.error(`Error: ${result.err}`);
       }
-    } catch {
-      toast.error("Failed to create pre-auth. Please try again.");
+    } catch (err) {
+      console.error("[PreAuth] createPreAuth failed:", err);
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(`Failed to create pre-auth: ${message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -2135,7 +2156,7 @@ export function PreAuthModule({
       {/* Content */}
       <div className="max-w-screen-xl mx-auto px-4 py-6">
         <WorkflowBanner
-          currentStep="preauth"
+          currentStep="rcm-workflow"
           onNavigate={(page) => onNavigate?.(page)}
         />
         <Tabs value={activeTab} onValueChange={handleTabChange}>

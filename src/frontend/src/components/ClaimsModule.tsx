@@ -2099,7 +2099,7 @@ export function ClaimsModule({
       {/* Content */}
       <div className="max-w-screen-xl mx-auto px-4 py-6">
         <WorkflowBanner
-          currentStep="claims"
+          currentStep="rcm-workflow"
           onNavigate={(page) => onNavigate?.(page)}
         />
         <Tabs value={activeTab} onValueChange={handleTabChange}>

@@ -2,20 +2,18 @@ import { cn } from "@/lib/utils";
 import {
   AlertTriangle,
   ArrowRight,
-  ClipboardList,
+  Clock,
   CreditCard,
-  FileCheck,
   LayoutDashboard,
-  Receipt,
   Users,
+  Zap,
 } from "lucide-react";
 
 const STEPS = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "rcm", label: "Patient", icon: Users },
-  { key: "preauth", label: "Pre-Auth", icon: FileCheck },
-  { key: "clinicaldocs", label: "Clinical Docs", icon: ClipboardList },
-  { key: "claims", label: "Claims", icon: Receipt },
+  { key: "rcm-workflow", label: "RCM Workflow", icon: Zap },
+  { key: "aging-ar", label: "Aging AR", icon: Clock },
   { key: "payment", label: "Payment", icon: CreditCard },
   { key: "denial", label: "Denial", icon: AlertTriangle },
 ] as const;

@@ -533,7 +533,7 @@ export function DenialModule({ onNavigate, onAlertCount }: Props) {
       updateDenialLocally(item.claim.id, "Resubmitted", "");
       toast.success("Marked as Resubmitted");
       await load();
-      onNavigate("claims", {
+      onNavigate("rcm-workflow", {
         preAuthId: item.claim.preAuthId,
         patientId: item.claim.patientId,
         patientName: item.claim.patientName,

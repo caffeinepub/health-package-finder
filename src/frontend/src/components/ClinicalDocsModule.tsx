@@ -2245,7 +2245,7 @@ export function ClinicalDocsModule({
       {/* Content */}
       <div className="max-w-screen-xl mx-auto px-4 py-6">
         <WorkflowBanner
-          currentStep="clinicaldocs"
+          currentStep="rcm-workflow"
           onNavigate={(page) => onNavigate?.(page)}
         />
         <Tabs value={activeTab} onValueChange={handleTabChange}>

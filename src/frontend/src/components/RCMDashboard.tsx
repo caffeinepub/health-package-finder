@@ -268,10 +268,10 @@ function ActivityRow({
         onClick={() =>
           onNavigate(
             item.type === "preauth"
-              ? "preauth"
+              ? "rcm-workflow"
               : item.type === "payment"
                 ? "payment"
-                : "claims",
+                : "rcm-workflow",
           )
         }
         className="shrink-0 text-xs font-semibold text-hp-blue hover:text-hp-navy flex items-center gap-0.5"
@@ -449,12 +449,12 @@ export function RCMDashboard({ onNavigate }: Props) {
             { label: "Patient Intake", key: "rcm", color: "bg-blue-600/80" },
             {
               label: "Pre-Authorization",
-              key: "preauth",
+              key: "rcm-workflow",
               color: "bg-indigo-600/80",
             },
             {
               label: "Claims Management",
-              key: "claims",
+              key: "rcm-workflow",
               color: "bg-purple-600/80",
             },
             {
@@ -716,14 +716,14 @@ export function RCMDashboard({ onNavigate }: Props) {
               description="Pre-auths exceeding turnaround time"
               icon={<Clock className="h-4 w-4 text-amber-500" />}
               accent="bg-amber-50"
-              onClick={() => onNavigate("preauth")}
+              onClick={() => onNavigate("rcm-workflow")}
             />
             <QuickAction
               label="View Aging AR"
               description="Outstanding 61+ day claims"
               icon={<AlertTriangle className="h-4 w-4 text-orange-500" />}
               accent="bg-orange-50"
-              onClick={() => onNavigate("claims")}
+              onClick={() => onNavigate("aging-ar")}
             />
             <QuickAction
               label="Register New Patient"
@@ -748,7 +748,7 @@ export function RCMDashboard({ onNavigate }: Props) {
           <button
             type="button"
             data-ocid="dashboard.activity.view_all"
-            onClick={() => onNavigate("claims")}
+            onClick={() => onNavigate("rcm-workflow")}
             className="text-xs font-semibold text-hp-blue hover:text-hp-navy flex items-center gap-0.5"
           >
             View all <ArrowUpRight className="h-3 w-3" />
